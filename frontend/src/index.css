@@ -1,0 +1,117 @@
+/* ovo su neki novi fontovi sa interneta*/
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Syne:wght@500;700;800&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), url('/pozadina.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: #333;
+}
+
+/* swtil za pocetnu stranicu */
+.home-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  padding: 20px;
+  text-align: center;
+}
+
+.home-title {
+  font-family: 'Syne', sans-serif; 
+  font-size: 4rem; 
+  font-weight: 800;
+  color: #111;
+  letter-spacing: -1px; /* ovo je za blago zbijena slova*/
+  margin-bottom: 15px;
+  text-transform: uppercase;
+}
+
+.home-subtitle {
+  font-size: 1.2rem;
+  color: #444;
+  max-width: 600px;
+  margin-bottom: 40px;
+  font-weight: 400;
+}
+
+/* za drugaciju dugmad modernu*/
+.btn-group {
+  display: flex;
+  gap: 20px;
+}
+
+.modern-btn {
+  padding: 15px 35px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: 2px solid #111; 
+  border-radius: 50px; 
+  cursor: pointer;
+  background: transparent;
+  color: #111;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* da kad predjemo preko dugmeta bude drugačiji izgled */
+.btn-login:hover {
+  background: #111;
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px); /* Za podizanje kad predjemo */
+}
+
+.btn-register {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(5px); /* blurovano */
+}
+
+.btn-register:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modern-btn:active {
+  transform: translateY(-1px);
+}
+
+/*kod za login i registraciju */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.auth-card {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+.auth-card h2 { margin-bottom: 25px; color: #222; font-weight: 600; }
+.input-group { margin-bottom: 20px; text-align: left; }
+.input-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #555; font-size: 0.95rem; }
+.input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; transition: border-color 0.3s; }
+.input-group input:focus { border-color: #007BFF; outline: none; }
+.auth-btn { width: 100%; padding: 14px; background-color: #007BFF; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; margin-top: 10px; }
+.auth-btn:hover { background-color: #0056b3; }

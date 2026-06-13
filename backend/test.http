@@ -1,0 +1,80 @@
+POST http://localhost:5000/api/register
+Content-Type: application/json
+
+{
+  "FirstName": "Tijana",
+  "LastName": "Tijanić",
+  "Email": "tijana@test.com",
+  "Password": "mojasifra123"
+}
+
+### Testiranje za Prijavu
+POST http://localhost:5000/api/login
+Content-Type: application/json
+
+{
+  "Email": "tijana@test.com",
+  "Password": "mojasifra123"
+}
+
+### Testiranje za dodavanje vendora, dozvoljava samo adminu
+POST http://localhost:5000/api/vendors
+Content-Type: application/json
+Authorization: Bearer TVOJ_TOKEN
+
+{
+  "CategoryID": 1,
+  "Name": "Restoran Test",
+  "Contact": "067-123-456",
+  "BasePrice": 1500.00,
+  "ImagePath": "restoran.jpg"
+}
+
+### Za registraciju admina
+POST http://localhost:5000/api/register
+Content-Type: application/json
+
+{
+  "FirstName": "Glavni",
+  "LastName": "Admin",
+  "Email": "admin@test.com",
+  "Password": "adminSifra123",
+  "RoleId": 1
+}
+
+### Za login Admina
+POST http://localhost:5000/api/login
+Content-Type: application/json
+
+{
+  "Email": "admin@test.com",
+  "Password": "adminSifra123"
+}
+
+### Test za uspješno dodavanje vendora kao admin
+POST http://localhost:5000/api/vendors
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwicm9sZUlkIjoxLCJpYXQiOjE3ODEyMDkwMzIsImV4cCI6MTc4MTIxNjIzMn0.89W2k0gc8k3LVg2txaXx4_yMXRDdCeTCdA5z2vl2Pvo
+  "CategoryID": 1,
+  "Name": "Svečana Sala BD",
+  "Contact": "067-989-898",
+  "BasePrice": 2400.00,
+  "ImagePath": "svecana_sala_bd.jpg"
+}
+
+
+### Test za pretragu vendora po imenu
+GET http://localhost:5000/api/vendors?search=Svecana
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwicm9sZUlkIjoxLCJpYXQiOjE3ODEyMDA2OTYsImV4cCI6MTc4MTIwNzg5Nn0.wC4VMHDOjtaMhDNbYPKFHoHVb0XugM-x7I_NRZi-wLc
+
+### Za upload slike testiranje
+POST http://localhost:5000/api/upload
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwicm9sZUlkIjoxLCJpYXQiOjE3ODEyMDkwMzIsImV4cCI6MTc4MTIxNjIzMn0.89W2k0gc8k3LVg2txaXx4_yMXRDdCeTCdA5z2vl2Pvo
+Content-Type: multipart/form-data; boundary=MojaGranica
+
+--MojaGranica
+Content-Disposition: form-data; name="slika"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< ./test.jpg
+--MojaGranica--
