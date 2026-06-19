@@ -1,117 +1,143 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 function Admin() {
   const [name, setName] = useState('');
-  const [categoryId, setCategoryId] = useState(1);
+  const [categoryId, setCategoryId] = useState('1');
   const [contact, setContact] = useState('');
   const [basePrice, setBasePrice] = useState('');
-  const [file, setFile] = useState(null);
+  const [slika, setSlika] = useState(null);
 
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('roleId');
-    navigate('/login');
-  };
-
-  const handleSubmit = async (e) => {
+  const handleAddVendor = async (e) => {
     e.preventDefault();
-    
+
+    // token iz memorije koji je sa;uvan pri loginu
     const token = localStorage.getItem('token');
+    
     if (!token) {
-      alert('Niste prijavljeni!');
+      alert('Niste ulogovani! Molimo vas da se prijavite kao Admin.');
       return;
     }
 
+    // header sa tokenom za sigurnosnu provjeru
+    const authConfig = {
+      headers: { Authorization: `Bearer ${token}` }
+    };
+
     try {
-      let imagePath = '';
+      let putanjaSlike = '';
 
-      if (file) {
+      // ako imamo sliku saljemo je na upload
+      if (slika) {
         const formData = new FormData();
-        formData.append('slika', file);
+        formData.append('slika', slika); 
 
-        const uploadResponse = await axios.post('http://localhost:5000/api/upload', formData, {
+        const uploadOdgovor = await axios.post('http://localhost:5000/api/upload', formData, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            ...authConfig.headers,
             'Content-Type': 'multipart/form-data'
           }
         });
-        
-        imagePath = uploadResponse.data.ImagePath; 
+
+        // backend salje odgovor sa tacnim imenom slike
+        putanjaSlike = uploadOdgovor.data.ImagePath; 
       }
 
+      // saljemo tekstualne podatke + ime slike na /api/vendors
       await axios.post('http://localhost:5000/api/vendors', {
-        CategoryID: categoryId,
         Name: name,
+        CategoryID: parseInt(categoryId),
         Contact: contact,
-        BasePrice: basePrice,
-        ImagePath: imagePath
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+        BasePrice: parseFloat(basePrice),
+        ImagePath: putanjaSlike 
+      }, authConfig);
 
-      alert('Vendor je uspješno dodat u bazu!');
+      alert('Uspješno dodato! Vendor i slika su sada u bazi.');
       
+      // za ciscenje forme
       setName('');
+      setCategoryId('1');
       setContact('');
       setBasePrice('');
-      setFile(null);
-
+      setSlika(null);
+      document.getElementById('file-upload').value = ""; 
+      
     } catch (error) {
-      console.error(error);
-      alert('Došlo je do greške pri dodavanju vendora.');
+      console.error('Greška:', error.response?.data || error.message);
+      alert(error.response?.data?.greska || error.response?.data?.poruka || 'Došlo je do greške pri dodavanju.');
     }
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '500px', margin: '50px auto', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+    <div className="auth-container">
+      <div className="auth-card" style={{ maxWidth: '600px' }}>
         <h2>Admin Panel</h2>
-        <button onClick={handleLogout} style={{ padding: '8px 12px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Odjavi se</button>
+        <p style={{ marginBottom: '25px', color: '#444' }}>Dodajte novog vendora i sliku.</p>
+        
+        <form onSubmit={handleAddVendor}>
+          
+          <div className="input-group">
+            <label>Naziv (Name)</label>
+            <input 
+              type="text" 
+              placeholder="Npr. Hotel Splendid"
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              required 
+            />
+          </div>
+
+          <div className="input-group">
+            <label>Kategorija (CategoryID)</label>
+            <select 
+              value={categoryId} 
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              <option value="1">Sale i restorani (1)</option>
+              <option value="2">Fotografi (2)</option>
+              <option value="3">Muzika / bendovi (3)</option>
+              <option value="4">Dekoracija (4)</option>
+              <option value="5">Torte i slatkiši (5)</option>
+            </select>
+          </div>
+
+          <div className="input-group">
+            <label>Kontakt (Contact)</label>
+            <input 
+              type="text" 
+              placeholder="Npr. 067-111-222"
+              value={contact} 
+              onChange={(e) => setContact(e.target.value)} 
+              required 
+            />
+          </div>
+
+          <div className="input-group">
+            <label>Početna cijena u € (BasePrice)</label>
+            <input 
+              type="number" 
+              step="0.01"
+              placeholder="Npr. 5000.00"
+              value={basePrice} 
+              onChange={(e) => setBasePrice(e.target.value)} 
+              required 
+            />
+          </div>
+
+          <div className="input-group">
+            <label>Dodaj sliku</label>
+            <input 
+              id="file-upload"
+              type="file" 
+              accept="image/*"
+              onChange={(e) => setSlika(e.target.files[0])} 
+              style={{ padding: '10px', background: 'rgba(255, 255, 255, 0.4)' }}
+            />
+          </div>
+          
+          <button type="submit" className="auth-btn">Sačuvaj vendora</button>
+        </form>
       </div>
-      
-      <h3 style={{ marginBottom: '15px' }}>Dodaj novog vendora</h3>
-      
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        <div>
-          <label style={{ fontWeight: 'bold' }}>Kategorija: </label>
-          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} style={{ width: '100%', padding: '8px', marginTop: '5px' }}>
-            <option value={1}>Restoran / Sala</option>
-            <option value={2}>Muzika / Bend</option>
-            <option value={3}>Fotograf</option>
-            <option value={4}>Dekoracija</option>
-          </select>
-        </div>
-
-        <div>
-          <label style={{ fontWeight: 'bold' }}>Naziv vendora: </label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%', padding: '8px', marginTop: '5px' }} />
-        </div>
-
-        <div>
-          <label style={{ fontWeight: 'bold' }}>Kontakt: </label>
-          <input type="text" value={contact} onChange={(e) => setContact(e.target.value)} required style={{ width: '100%', padding: '8px', marginTop: '5px' }} />
-        </div>
-
-        <div>
-          <label style={{ fontWeight: 'bold' }}>Cijena (€): </label>
-          <input type="number" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} required style={{ width: '100%', padding: '8px', marginTop: '5px' }} />
-        </div>
-
-        <div>
-          <label style={{ fontWeight: 'bold' }}>Slika: </label>
-          <input type="file" onChange={(e) => setFile(e.target.files[0])} accept="image/*" style={{ marginTop: '5px' }} />
-        </div>
-
-        <button type="submit" style={{ marginTop: '10px', padding: '12px', backgroundColor: '#28A745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1.1rem' }}>
-          Sačuvaj vendora
-        </button>
-      </form>
     </div>
   );
 }

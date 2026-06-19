@@ -1,11 +1,15 @@
 import { useNavigate } from 'react-router-dom';
+import logoSlika from '../assets/logo.png';
 
 function Home() {
   const navigate = useNavigate();
 
-  return (
+return (
     <div className="home-container">
-      <h1 className="home-title">EventDreamer</h1>
+      <div className="logo-container">
+        <img src={logoSlika} alt="EventDreamer Logo" className="home-main-logo" />
+      </div>
+      <h1 className="home-title" style={{ marginBottom: '20px' }}>EVENTDREAMER</h1>
       <p className="home-subtitle">
         "Zaboravite na stres oko organizacije. Pronađite idealan prostor, ritam koji pokreće i dekoraciju koja oduzima dah – sve na jedan klik od vas."
       </p>
@@ -28,5 +32,4 @@ function Home() {
     </div>
   );
 }
-
 export default Home;

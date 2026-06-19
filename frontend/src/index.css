@@ -1,5 +1,11 @@
-/* ovo su neki novi fontovi sa interneta*/
+/* === GOOGLE FONTOVI === */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Syne:wght@500;700;800&display=swap');
+
+/* boje koje koje su na logu*/
+:root {
+  --logo-pink: #F6DEEA;
+  --logo-green: #BCC5AA;
+}
 
 * {
   margin: 0;
@@ -18,7 +24,7 @@ body {
   color: #333;
 }
 
-/* swtil za pocetnu stranicu */
+/* css za pocetnu stranicu */
 .home-container {
   display: flex;
   flex-direction: column;
@@ -29,13 +35,25 @@ body {
   text-align: center;
 }
 
+/* logo za pocetnu */
+.home-main-logo {
+  height: 120px !important; 
+  width: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
+  transition: transform 0.3s ease;
+}
+
+.home-main-logo:hover {
+  transform: scale(1.05);
+}
+
 .home-title {
-  font-family: 'Syne', sans-serif; 
-  font-size: 4rem; 
+  font-family: 'Syne', sans-serif;
+  font-size: 4rem;
   font-weight: 800;
   color: #111;
-  letter-spacing: -1px; /* ovo je za blago zbijena slova*/
-  margin-bottom: 15px;
+  letter-spacing: -1px;
+  margin: 0;
   text-transform: uppercase;
 }
 
@@ -47,7 +65,7 @@ body {
   font-weight: 400;
 }
 
-/* za drugaciju dugmad modernu*/
+/* Za dugmiće na početnoj */
 .btn-group {
   display: flex;
   gap: 20px;
@@ -57,8 +75,8 @@ body {
   padding: 15px 35px;
   font-size: 1.1rem;
   font-weight: 600;
-  border: 2px solid #111; 
-  border-radius: 50px; 
+  border: 2px solid #111;
+  border-radius: 50px;
   cursor: pointer;
   background: transparent;
   color: #111;
@@ -67,23 +85,23 @@ body {
   overflow: hidden;
 }
 
-/* da kad predjemo preko dugmeta bude drugačiji izgled */
 .btn-login:hover {
-  background: #111;
-  color: #fff;
+  background: var(--logo-green);
+  color: #222;
+  border-color: var(--logo-green);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-  transform: translateY(-3px); /* Za podizanje kad predjemo */
+  transform: translateY(-3px);
 }
 
 .btn-register {
   background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(5px); /* blurovano */
+  backdrop-filter: blur(5px);
 }
 
 .btn-register:hover {
-  background: #111;
-  color: #fff;
-  border-color: #111;
+  background: var(--logo-pink);
+  color: #222;
+  border-color: var(--logo-pink);
   transform: translateY(-3px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
@@ -92,26 +110,260 @@ body {
   transform: translateY(-1px);
 }
 
-/*kod za login i registraciju */
+/* css za prijavu i registraciju*/
 .auth-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+  padding: 20px;
 }
+
 .auth-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
   padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  text-align: center;
+  color: #111;
+}
+
+.auth-card h2 {
+  margin-bottom: 25px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #111;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+  width: 100%;
+  padding: 14px 15px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  font-size: 1rem;
+  color: #222;
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: #fff;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.input-group input::placeholder,
+.input-group textarea::placeholder {
+  color: #555;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--logo-pink);
+  color: #222;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  letter-spacing: 0.5px;
+}
+
+.auth-btn:hover {
+  background: var(--logo-green);
+  color: #222;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* css za dashboard */
+.dashboard-container {
+  padding: 50px 20px;
+  min-height: 100vh;
   text-align: center;
 }
-.auth-card h2 { margin-bottom: 25px; color: #222; font-weight: 600; }
-.input-group { margin-bottom: 20px; text-align: left; }
-.input-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #555; font-size: 0.95rem; }
-.input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; transition: border-color 0.3s; }
-.input-group input:focus { border-color: #007BFF; outline: none; }
-.auth-btn { width: 100%; padding: 14px; background-color: #007BFF; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; margin-top: 10px; }
-.auth-btn:hover { background-color: #0056b3; }
+
+/* logo za dashboard */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.app-logo {
+  height: 140px; 
+  width: auto;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));
+  transition: transform 0.3s ease;
+}
+
+.app-logo:hover {
+  transform: scale(1.05);
+}
+
+.dashboard-title {
+  color: #111;
+  font-size: 2.5rem;
+  margin-bottom: 40px;
+  font-weight: 700;
+}
+
+/* Tabovi za filter kategoriju*/
+.category-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 10px 22px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 30px;
+  color: #222;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.tab-btn.active {
+  background: var(--logo-green);
+  color: #222;
+  border-color: var(--logo-green);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Flexbox kontejner za sve kartice za vendore */
+.vendor-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.vendor-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+  overflow: hidden;
+  width: 320px;
+  text-align: left;
+  transition: transform 0.3s ease;
+}
+
+.vendor-card:hover {
+  transform: translateY(-8px);
+}
+
+.vendor-image-container {
+  width: 100%;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.vendor-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder-image {
+  color: #666;
+  font-weight: 500;
+}
+
+.vendor-info {
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.vendor-info h3 {
+  font-size: 1.5rem;
+  color: #111;
+  margin-bottom: 10px;
+}
+
+.vendor-info .kategorija {
+  align-self: flex-start;
+  background: var(--logo-pink);
+  color: #222;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.vendor-info .opis {
+  color: #222;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.vendor-info .contact-btn {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  color: #111;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: auto;
+}
+
+.vendor-info .contact-btn:hover {
+  background: var(--logo-green);
+  color: #222;
+  border-color: var(--logo-green);
+}
