@@ -4,18 +4,24 @@ import logoSlika from '../assets/logo.png';
 
 function Dashboard() {
   const [vendori, setVendori] = useState([]);
-  
+  const [userEvents, setUserEvents] = useState([]); // Svi događaji ovog korisnika
   const [aktivnaKategorija, setAktivnaKategorija] = useState('Sve');
+  
+  // Stanja za iskačući prozor zakazivanja
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [chosenEventId, setChosenEventId] = useState('');
+  const [bookingMessage, setBookingMessage] = useState('');
 
   useEffect(() => {
-    const fetchVendori = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        console.error('Token nije pronađen! Korisnik vjerovatno nije ulogovan.');
-        return;
-      }
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.error('Token nije pronađen! Korisnik vjerovatno nije ulogovan.');
+      return;
+    }
 
+    // Ucitavaju se svi vendori
+    const fetchVendori = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/vendors', {
           headers: { Authorization: `Bearer ${token}` }
@@ -26,8 +32,59 @@ function Dashboard() {
       }
     };
 
+    // Ucitavanje dogadjaja ulogovanog korisnika
+    const fetchUserEvents = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/my-events', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUserEvents(response.data);
+      } catch (error) {
+        console.error('Greška pri učitavanju korisnikovih događaja:', error);
+      }
+    };
+
     fetchVendori();
+    fetchUserEvents();
   }, []);
+
+  // Funkcija za proces zakazivanja na backendu
+  const handleConfirmBooking = async () => {
+    const token = localStorage.getItem('token');
+    if (!chosenEventId) {
+      alert('Molimo te izaberi događaj.');
+      return;
+    }
+
+    try {
+      await axios.post('http://localhost:5000/api/book-vendor', {
+        eventId: chosenEventId,
+        vendorId: selectedVendor.Id,
+        expenseName: `Angažovanje: ${selectedVendor.Name}`,
+        amount: selectedVendor.BasePrice
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setBookingMessage('🎉 Uspješno zakazano! Provjeri stranicu "Moji događaji".');
+      setTimeout(() => {
+        setSelectedVendor(null);
+        setChosenEventId('');
+        setBookingMessage('');
+        // Za osvjezavanje dogadjaja
+        window.location.reload(); 
+      }, 2000);
+
+    } catch (error) {
+      console.error(error);
+      // Za specificnu poruku iz backenda
+      if (error.response && error.response.data && error.response.data.poruka) {
+        alert(error.response.data.poruka);
+      } else {
+        alert('Greška pri zakazivanju. Pokušaj ponovo.');
+      }
+    }
+  };
 
   const getNazivKategorije = (id) => {
     switch(Number(id)) {
@@ -39,20 +96,18 @@ function Dashboard() {
       default: return 'Razno';
     }
   };
+
   const filtriraniVendori = aktivnaKategorija === 'Sve' 
     ? vendori 
     : vendori.filter((vendor) => Number(vendor.CategoryID) === aktivnaKategorija);
 
   return (
-
     <div className="dashboard-container">
-      {}
       <div className="logo-container">
         <img src={logoSlika} alt="EventDreamer Logo" className="app-logo" />
       </div>
       <h1 className="dashboard-title">Pronađite savršene vendore</h1>
       
-      {}
       <div className="category-tabs">
         <button 
           className={`tab-btn ${aktivnaKategorija === 'Sve' ? 'active' : ''}`} 
@@ -84,7 +139,6 @@ function Dashboard() {
         {filtriraniVendori.length > 0 ? (
           filtriraniVendori.map((vendor) => (
             <div key={vendor.Id || Math.random()} className="vendor-card">
-              
               <div className="vendor-image-container">
                 {vendor.ImagePath ? (
                   <img 
@@ -106,7 +160,13 @@ function Dashboard() {
                   <p><strong>Početna cijena:</strong> {vendor.BasePrice} €</p>
                 </div>
                 
-                <button className="contact-btn">Zakaži termin</button>
+                {/* na klik idemo na zakazivanje*/}
+                <button 
+                  className="contact-btn" 
+                  onClick={() => setSelectedVendor(vendor)}
+                >
+                  Zakaži termin
+                </button>
               </div>
             </div>
           ))
@@ -116,6 +176,65 @@ function Dashboard() {
           </p>
         )}
       </div>
+
+      {/* za zakazivanje termina*/}
+      {selectedVendor && (
+        <div className="modal-overlay" onClick={() => setSelectedVendor(null)}>
+          <div className="modal-content" style={{maxWidth: '500px'}} onClick={(e) => e.stopPropagation()}>
+            <button className="close-modal-btn" onClick={() => setSelectedVendor(null)}>✖</button>
+            
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Zakaži: {selectedVendor.Name}</h2>
+            <p style={{color: '#555'}}>Cijena usluge: <strong style={{ fontSize: '1.2rem', color: '#111' }}>{selectedVendor.BasePrice} €</strong></p>
+            
+            {bookingMessage ? (
+              <p style={{color: '#28a745', fontWeight: '600', marginTop: '20px', fontSize: '1.1rem', padding: '15px', background: 'rgba(40, 167, 69, 0.1)', borderRadius: '10px'}}>
+                {bookingMessage}
+              </p>
+            ) : (
+              <div style={{marginTop: '25px'}}>
+                <h4 style={{marginBottom: '15px', color: '#333'}}>Izaberi za koji događaj rezervišeš:</h4>
+                
+                <div className="event-selection-list">
+                  {userEvents.length === 0 ? (
+                    <p>Nemaš kreiranih događaja. Prvo napravi događaj na svom profilu!</p>
+                  ) : (
+                    userEvents.map(event => (
+                      <div 
+                        key={event.Id} 
+                        className={`event-option-card ${chosenEventId === event.Id ? 'selected' : ''}`}
+                        onClick={() => setChosenEventId(event.Id)}
+                      >
+                        <div className="event-option-info">
+                          <h4>{event.Title}</h4>
+                          {/* za prikaz datuma dogadjaja*/}
+                          <span className="event-option-date">
+                            📅 {new Date(event.Date).toLocaleDateString('me-ME')}
+                          </span>
+                        </div>
+                        <div className="radio-circle"></div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <button 
+                  className="auth-btn" 
+                  style={{
+                    marginTop: '25px', 
+                    background: chosenEventId ? 'var(--logo-green)' : '#ccc',
+                    cursor: chosenEventId ? 'pointer' : 'not-allowed',
+                    color: chosenEventId ? '#111' : '#666'
+                  }}
+                  onClick={handleConfirmBooking}
+                  disabled={!chosenEventId}
+                >
+                  {chosenEventId ? 'Potvrdi rezervaciju' : 'Prvo odaberi događaj'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
