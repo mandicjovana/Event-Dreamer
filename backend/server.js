@@ -275,6 +275,84 @@ app.get('/api/event-types', async (req, res) => {
     }
 });
 
+// ruta za to do listu
+app.put('/api/tasks/:id/toggle', verifyToken, async (req, res) => {
+    const taskId = req.params.id;
+    const { isCompleted } = req.body; // true ili false
+
+    try {
+        // U MySQL-u se cuva kao 1 ili 0
+        const statusZaBazu = isCompleted ? 1 : 0;
+        
+        await db.promise().query('UPDATE Tasks SET IsCompleted = ? WHERE Id = ?', [statusZaBazu, taskId]);
+        res.json({ poruka: 'Zadatak uspješno ažuriran!' });
+    } catch (error) {
+        console.error('Greška pri ažuriranju zadatka:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri ažuriranju zadatka.' });
+    }
+});
+// ruta za provjeru za goste
+app.put('/api/guests/:id/rsvp', verifyToken, async (req, res) => {
+    const guestId = req.params.id;
+    const { rsvpStatus } = req.body; 
+
+    try {
+        await db.promise().query('UPDATE Guests SET RSVPStatus = ? WHERE Id = ?', [rsvpStatus, guestId]);
+        res.json({ poruka: 'Status gosta uspješno ažuriran!' });
+    } catch (error) {
+        console.error('Greška pri ažuriranju statusa gosta:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri ažuriranju statusa.' });
+    }
+});
+// ruta za dodavanje novog zadatka u odredjeni dogadjaj
+app.post('/api/tasks', verifyToken, async (req, res) => {
+    const { eventId, taskName } = req.body;
+
+    if (!eventId || !taskName) {
+        return res.status(400).json({ poruka: 'Sva polja su obavezna.' });
+    }
+
+    try {
+        // IsCompleted = 0 znaci da je novi zadatak na pocetku nezavrsen
+        await db.promise().query('INSERT INTO Tasks (EventID, TaskName, IsCompleted) VALUES (?, ?, 0)', [eventId, taskName]);
+        res.status(201).json({ poruka: 'Zadatak uspješno dodat!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ greska: 'Greška na serveru pri dodavanju zadatka.' });
+    }
+});
+
+// ruta za dodavanje novog gosta u odredjeni dogadjaj
+app.post('/api/guests', verifyToken, async (req, res) => {
+    const { eventId, firstName, lastName } = req.body;
+
+    if (!eventId || !firstName || !lastName) {
+        return res.status(400).json({ poruka: 'Sva polja su obavezna.' });
+    }
+
+    try {
+        // novi gost je na pocetku na cekanju
+        await db.promise().query('INSERT INTO Guests (EventId, FirstName, LastName, RSVPStatus) VALUES (?, ?, ?, "Na čekanju")', [eventId, firstName, lastName]);
+        res.status(201).json({ poruka: 'Gost uspješno dodat!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ greska: 'Greška na serveru pri dodavanju gosta.' });
+    }
+});
+// ruta za placanje troska
+app.put('/api/expenses/:id/paid', verifyToken, async (req, res) => {
+    const expenseId = req.params.id;
+    const { isPaid } = req.body; // prima true ili false iz reacta
+
+    try {
+        const statusZaBazu = isPaid ? 1 : 0;
+        await db.promise().query('UPDATE Expenses SET IsPaid = ? WHERE Id = ?', [statusZaBazu, expenseId]);
+        res.json({ poruka: 'Status plaćanja uspješno ažuriran!' });
+    } catch (error) {
+        console.error('Greška pri ažuriranju plaćanja:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri ažuriranju plaćanja.' });
+    }
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server je pokrenut na http://localhost:${PORT}`);
