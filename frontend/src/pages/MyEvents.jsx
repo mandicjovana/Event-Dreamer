@@ -110,6 +110,7 @@ function MyEvents() {
       console.error(error);
     }
   };
+
   //funkcija za promjenu placanja troska
   const handleToggleExpensePaid = async (expenseId, currentStatus) => {
     const token = localStorage.getItem('token');
@@ -125,6 +126,7 @@ function MyEvents() {
       console.error('Greška pri ažuriranju plaćanja', error);
     }
   };
+
   // funkcija za dodavanje zadataka na klik
   const handleAddTask = async (e) => {
     e.preventDefault();
@@ -204,16 +206,46 @@ function MyEvents() {
                     <h4>Budžet</h4>
                     <p className="stat-numbers">{potroseno} € <span className="stat-total">/ {event.TotalBudget} €</span></p>
                     <div className="progress-bar-bg">
-                      <div className="progress-bar-fill pink-fill" style={{ width: `${Math.min((potroseno / event.TotalBudget) * 100, 100)}%` }}></div>
+                      <div 
+                        className="progress-bar-fill pink-fill" 
+                        style={{ 
+                          width: `${Math.min((potroseno / event.TotalBudget) * 100, 100)}%`,
+                          fontSize: '10px', 
+                          color: '#111', 
+                          fontWeight: 'bold', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          minWidth: potroseno > 0 ? '20px' : '0' 
+                        }}
+                      >
+                        {event.TotalBudget > 0 ? `${Math.round((potroseno / event.TotalBudget) * 100)}%` : '0%'}
+                      </div>
                     </div>
                   </div>
+
                   <div className="stat-box">
                     <h4>Zadaci</h4>
                     <p className="stat-numbers">{zavrseniZadaci} <span className="stat-total">/ {ukupnoZadataka}</span></p>
                     <div className="progress-bar-bg">
-                      <div className="progress-bar-fill green-fill" style={{ width: `${ukupnoZadataka > 0 ? (zavrseniZadaci / ukupnoZadataka) * 100 : 0}%` }}></div>
+                      <div 
+                        className="progress-bar-fill green-fill" 
+                        style={{ 
+                          width: `${ukupnoZadataka > 0 ? (zavrseniZadaci / ukupnoZadataka) * 100 : 0}%`,
+                          fontSize: '10px', 
+                          color: '#111', 
+                          fontWeight: 'bold', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          minWidth: zavrseniZadaci > 0 ? '20px' : '0'
+                        }}
+                      >
+                        {ukupnoZadataka > 0 ? `${Math.round((zavrseniZadaci / ukupnoZadataka) * 100)}%` : '0%'}
+                      </div>
                     </div>
                   </div>
+
                   <div className="stat-box">
                     <h4>Gosti</h4>
                     <p className="stat-numbers">{potvrdiliGosti} <span className="stat-total">/ {ukupnoGostiju}</span></p>
@@ -232,7 +264,6 @@ function MyEvents() {
       {/* prikaz detalja */}
       {selectedEvent && (
         <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
-          {/* UVEĆAN PROZOR: Sa 900px smo podigli na 1050px širine i dodali veći komfor */}
           <div className="modal-content" style={{ maxWidth: '1050px', width: '95%', padding: '45px' }} onClick={(e) => e.stopPropagation()}>
             <button className="close-modal-btn" onClick={() => setSelectedEvent(null)}>✖</button>
             
@@ -286,7 +317,7 @@ function MyEvents() {
                   <h3>💌 Lista Gostiju</h3>
                   <ul style={{ maxHeight: '240px', overflowY: 'auto', marginBottom: '15px', paddingRight: '5px' }}>
                     {selectedEvent.guests && selectedEvent.guests.length > 0 ? selectedEvent.guests.map(guest => (
-                      <li key={guest.Id} style={{ display: 'flex', justify盤ontent: 'space-between', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed rgba(0,0,0,0.05)' }}>
+                      <li key={guest.Id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed rgba(0,0,0,0.05)' }}>
                         <span style={{ fontSize: '1rem', fontWeight: '500' }}>{guest.FirstName} {guest.LastName}</span>
                         <select 
                           value={guest.RSVPStatus || 'Na čekanju'} 
@@ -337,8 +368,6 @@ function MyEvents() {
                         <span style={{ fontWeight: '600', fontSize: '0.95rem', color: '#111' }}>{expense.VendorName}</span>
                         <span style={{ fontSize: '0.9rem', color: '#555' }}>Iznos: {expense.ActualAmount} €</span>
                       </div>
-                      
-                      {/* selekt za placeno ili neplaceno */}
                       <select 
                         value={expense.IsPaid ? "1" : "0"} 
                         onChange={() => handleToggleExpensePaid(expense.Id, expense.IsPaid)}
