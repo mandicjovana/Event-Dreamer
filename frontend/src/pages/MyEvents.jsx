@@ -164,7 +164,13 @@ function MyEvents() {
       console.error(error);
     }
   };
-
+  // Funkcija za potvrdu da li zelimo da izadjemo iz prikza detaja
+  const handleCloseModal = () => {
+    const isConfirmed = window.confirm("Da li ste sigurni da želite da zatvorite prozor? Sve promjene koje ste napravili su već uspješno sačuvane.");
+    if (isConfirmed) {
+      setSelectedEvent(null);
+    }
+  };
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString('me-ME', options);
@@ -246,12 +252,30 @@ function MyEvents() {
                     </div>
                   </div>
 
+                  {/* za goste*/}
                   <div className="stat-box">
                     <h4>Gosti</h4>
                     <p className="stat-numbers">{potvrdiliGosti} <span className="stat-total">/ {ukupnoGostiju}</span></p>
+                    <div className="progress-bar-bg">
+                      <div 
+                        className="progress-bar-fill" 
+                        style={{ 
+                          width: `${ukupnoGostiju > 0 ? (potvrdiliGosti / ukupnoGostiju) * 100 : 0}%`,
+                          background: 'var(--logo-pink)', 
+                          fontSize: '10px', 
+                          color: '#111', 
+                          fontWeight: 'bold', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          minWidth: potvrdiliGosti > 0 ? '20px' : '0'
+                        }}
+                      >
+                        {ukupnoGostiju > 0 ? `${Math.round((potvrdiliGosti / ukupnoGostiju) * 100)}%` : '0%'}
+                      </div>
+                    </div>
                   </div>
                 </div>
-
                 <button className="details-btn" onClick={() => setSelectedEvent(event)}>
                   Prikaži detalje
                 </button>
@@ -263,9 +287,9 @@ function MyEvents() {
 
       {/* prikaz detalja */}
       {selectedEvent && (
-        <div className="modal-overlay" onClick={() => setSelectedEvent(null)}>
+        <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" style={{ maxWidth: '1050px', width: '95%', padding: '45px' }} onClick={(e) => e.stopPropagation()}>
-            <button className="close-modal-btn" onClick={() => setSelectedEvent(null)}>✖</button>
+            <button className="close-modal-btn" onClick={handleCloseModal}>✖</button>
             
             <h2 style={{ borderBottom: '2px solid rgba(0,0,0,0.05)', paddingBottom: '15px', marginBottom: '25px', fontSize: '1.7rem' }}>
               {selectedEvent.Title} - Detaljna organizacija
