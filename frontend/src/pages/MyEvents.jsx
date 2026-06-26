@@ -7,7 +7,7 @@ function MyEvents() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  const [selectedEvent, setSelectedEvent] = useState(null); // Za prikaz detalja
+  const [selectedEvent, setSelectedEvent] = useState(null); 
   
   // Stanja za kreiranje događaja
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -28,13 +28,22 @@ function MyEvents() {
 
   const navigate = useNavigate();
 
-  // ovo je funkcija za učitavanje svih podataka sa servera
+  // funkcija za učitavanje svih podataka sa servera
   const fetchAllData = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
       return;
     }
+
+    // // za upozorenje kad admin hoce da udje na my-events
+    const roleId = localStorage.getItem('roleId');
+    if (Number(roleId) === 1) {
+      window.alert('❌ Pristup odbijen! Administratori nemaju pristup korisničkim stranicama.');
+      navigate('/admin'); 
+      return; 
+    }
+
     try {
       const responseEvents = await axios.get('http://localhost:5000/api/my-events', {
         headers: { Authorization: `Bearer ${token}` }
@@ -121,7 +130,7 @@ function MyEvents() {
         { isPaid: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      fetchAllData(); // ovo je da bi se promijenio progress bar na glavnoj kartici
+      fetchAllData(); 
     } catch (error) {
       console.error('Greška pri ažuriranju plaćanja', error);
     }
@@ -139,7 +148,7 @@ function MyEvents() {
       }, { headers: { Authorization: `Bearer ${token}` } });
       
       setInputTaskName('');
-      fetchAllData(); //za osjezavanje podataka
+      fetchAllData(); 
     } catch (error) {
       console.error(error);
     }
@@ -164,6 +173,7 @@ function MyEvents() {
       console.error(error);
     }
   };
+
   // Funkcija za potvrdu da li zelimo da izadjemo iz prikza detaja
   const handleCloseModal = () => {
     const isConfirmed = window.confirm("Da li ste sigurni da želite da zatvorite prozor? Sve promjene koje ste napravili su već uspješno sačuvane.");
@@ -171,6 +181,7 @@ function MyEvents() {
       setSelectedEvent(null);
     }
   };
+  
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString('me-ME', options);
@@ -182,7 +193,7 @@ function MyEvents() {
   return (
     <div className="dashboard-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '900px', margin: '0 auto 30px auto' }}>
-        <h1 className="dashboard-title" style={{ margin: 0 }}>Moji Događaji</h1>
+        <h1 className="dashboard-title" style={{ margin: 0 }}>Moji događaji</h1>
         <button className="create-event-btn" onClick={() => setIsCreateModalOpen(true)}>
           + Kreiraj događaj
         </button>

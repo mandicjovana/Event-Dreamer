@@ -73,7 +73,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Za prijavu korisnika
+// Za prijavu korisnika (ISPRAVLJENO)
 app.post('/api/login', (req, res) => {
     const { Email, Password } = req.body;
 
@@ -81,34 +81,42 @@ app.post('/api/login', (req, res) => {
         if (err) return res.status(500).json({ greska: 'Greška na serveru.' });
         if (results.length === 0) return res.status(400).json({ poruka: 'Pogrešan email ili lozinka!' });
 
-        const user = results[0];
+        try {
+            const user = results[0];
+            let validPassword = false;
 
-        let validPassword = false;
-        if (user.Password.startsWith('$2b$')) {
-            validPassword = await bcrypt.compare(Password, user.Password);
-        } else {
-            validPassword = (Password === user.Password);
-        }
-
-        if (!validPassword) return res.status(400).json({ poruka: 'Pogrešan email ili lozinka!' });
-
-        const token = jwt.sign(
-            { id: user.Id, roleId: user.RoleId }, 
-            process.env.JWT_SECRET, 
-            { expiresIn: '2h' } 
-        );
-
-        res.json({
-            poruka: 'Uspješan login!',
-            token: token,
-            user: {
-                id: user.Id,
-                ime: user.FirstName,
-                prezime: user.LastName,
-                email: user.Email,
-                roleId: user.RoleId
+            if (user.Password.startsWith('$2b$')) {
+                validPassword = await bcrypt.compare(Password, user.Password);
+            } else {
+                validPassword = (Password === user.Password);
             }
-        });
+
+            if (!validPassword) return res.status(400).json({ poruka: 'Pogrešan email ili lozinka!' });
+
+            // Hvatamo rolu
+            const userRole = user.RoleId || user.RoleID || 2;
+
+            const token = jwt.sign(
+                { id: user.Id || user.ID, roleId: userRole, RoleId: userRole }, 
+                process.env.JWT_SECRET, 
+                { expiresIn: '2h' } 
+            );
+
+            res.json({
+                poruka: 'Uspješan login!',
+                token: token,
+                user: {
+                    id: user.Id || user.ID,
+                    ime: user.FirstName,
+                    prezime: user.LastName,
+                    email: user.Email,
+                    roleId: userRole // Malo 'r' za React!
+                }
+            });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ poruka: 'Greška pri obradi prijave.' });
+        }
     });
 });
 
@@ -196,7 +204,7 @@ app.get('/api/my-events', verifyToken, async (req, res) => {
 // ruta za kreiranje dogadjaja
 app.post('/api/events', verifyToken, async (req, res) => {
     const { eventTypeId, title, date, location, totalBudget } = req.body;
-    const userId = req.user.id; // ovo je id od trenutno ulogovanog korisnika
+    const userId = req.user.id; 
 
     if (!eventTypeId || !title || !date || !location || !totalBudget) {
         return res.status(400).json({ poruka: 'Sva polja moraju biti popunjena!' });
@@ -278,19 +286,17 @@ app.get('/api/event-types', async (req, res) => {
 // ruta za to do listu
 app.put('/api/tasks/:id/toggle', verifyToken, async (req, res) => {
     const taskId = req.params.id;
-    const { isCompleted } = req.body; // true ili false
+    const { isCompleted } = req.body; 
 
     try {
-        // U MySQL-u se cuva kao 1 ili 0
         const statusZaBazu = isCompleted ? 1 : 0;
-        
         await db.promise().query('UPDATE Tasks SET IsCompleted = ? WHERE Id = ?', [statusZaBazu, taskId]);
         res.json({ poruka: 'Zadatak uspješno ažuriran!' });
     } catch (error) {
-        console.error('Greška pri ažuriranju zadatka:', error);
         res.status(500).json({ greska: 'Greška na serveru pri ažuriranju zadatka.' });
     }
 });
+
 // ruta za provjeru za goste
 app.put('/api/guests/:id/rsvp', verifyToken, async (req, res) => {
     const guestId = req.params.id;
@@ -300,10 +306,10 @@ app.put('/api/guests/:id/rsvp', verifyToken, async (req, res) => {
         await db.promise().query('UPDATE Guests SET RSVPStatus = ? WHERE Id = ?', [rsvpStatus, guestId]);
         res.json({ poruka: 'Status gosta uspješno ažuriran!' });
     } catch (error) {
-        console.error('Greška pri ažuriranju statusa gosta:', error);
         res.status(500).json({ greska: 'Greška na serveru pri ažuriranju statusa.' });
     }
 });
+
 // ruta za dodavanje novog zadatka u odredjeni dogadjaj
 app.post('/api/tasks', verifyToken, async (req, res) => {
     const { eventId, taskName } = req.body;
@@ -313,11 +319,9 @@ app.post('/api/tasks', verifyToken, async (req, res) => {
     }
 
     try {
-        // IsCompleted = 0 znaci da je novi zadatak na pocetku nezavrsen
         await db.promise().query('INSERT INTO Tasks (EventID, TaskName, IsCompleted) VALUES (?, ?, 0)', [eventId, taskName]);
         res.status(201).json({ poruka: 'Zadatak uspješno dodat!' });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ greska: 'Greška na serveru pri dodavanju zadatka.' });
     }
 });
@@ -331,26 +335,83 @@ app.post('/api/guests', verifyToken, async (req, res) => {
     }
 
     try {
-        // novi gost je na pocetku na cekanju
         await db.promise().query('INSERT INTO Guests (EventId, FirstName, LastName, RSVPStatus) VALUES (?, ?, ?, "Na čekanju")', [eventId, firstName, lastName]);
         res.status(201).json({ poruka: 'Gost uspješno dodat!' });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ greska: 'Greška na serveru pri dodavanju gosta.' });
     }
 });
+
 // ruta za placanje troska
 app.put('/api/expenses/:id/paid', verifyToken, async (req, res) => {
     const expenseId = req.params.id;
-    const { isPaid } = req.body; // prima true ili false iz reacta
+    const { isPaid } = req.body; 
 
     try {
         const statusZaBazu = isPaid ? 1 : 0;
         await db.promise().query('UPDATE Expenses SET IsPaid = ? WHERE Id = ?', [statusZaBazu, expenseId]);
         res.json({ poruka: 'Status plaćanja uspješno ažuriran!' });
     } catch (error) {
-        console.error('Greška pri ažuriranju plaćanja:', error);
         res.status(500).json({ greska: 'Greška na serveru pri ažuriranju plaćanja.' });
+    }
+});
+
+// ruta za statistiku u admin panelu
+app.get('/api/admin/stats', verifyToken, async (req, res) => {
+    if (!req.user || req.user.roleId !== 1) {
+        return res.status(403).json({ poruka: 'Pristup odbijen. Niste administrator.' });
+    }
+
+    try {
+        const [users] = await db.promise().query('SELECT COUNT(*) as ukupno FROM Users WHERE RoleId = 2 OR RoleID = 2');
+        const [events] = await db.promise().query('SELECT COUNT(*) as ukupno FROM Events');
+        const [vendors] = await db.promise().query('SELECT COUNT(*) as ukupno FROM Vendors');
+
+        res.json({
+            ukupnoKorisnika: users[0].ukupno || 0,
+            ukupnoDogadjaja: events[0].ukupno || 0,
+            ukupnoVendora: vendors[0].ukupno || 0
+        });
+    } catch (error) {
+        console.error('Greška pri dobavljanju statistike za admina:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri dobavljanju statistike za admina.' });
+    }
+});
+// ruta za sve korisnike za admin panel
+app.get('/api/admin/users', verifyToken, async (req, res) => {
+    if (!req.user || req.user.roleId !== 1) {
+        return res.status(403).json({ poruka: 'Pristup odbijen. Niste administrator.' });
+    }
+
+    try {
+        // korisnici bez lozinki zbog sigurnosti
+        const [users] = await db.promise().query('SELECT Id, FirstName, LastName, Email, RoleId FROM Users ORDER BY Id DESC');
+        res.json(users);
+    } catch (error) {
+        console.error('Greška pri dobavljanju korisnika:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri dobavljanju korisnika.' });
+    }
+});
+// ruta za sve dogadjaje i korisnike za dogadjaje za admin panel
+app.get('/api/admin/events', verifyToken, async (req, res) => {
+    if (!req.user || req.user.roleId !== 1) {
+        return res.status(403).json({ poruka: 'Pristup odbijen. Niste administrator.' });
+    }
+
+    try {
+        // JOIN jer spajamo Events i Users jer nam treba korisnik koji je kreirao dogadjaj
+        const query = `
+            SELECT Events.Id, Events.Title, Events.Date, Events.Location, Events.TotalBudget,
+                   Users.FirstName, Users.LastName, Users.Email
+            FROM Events
+            JOIN Users ON Events.UserID = Users.Id
+            ORDER BY Events.Date DESC
+        `;
+        const [events] = await db.promise().query(query);
+        res.json(events);
+    } catch (error) {
+        console.error('Greška pri dobavljanju svih događaja za admina:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri dobavljanju događaja.' });
     }
 });
 const PORT = process.env.PORT || 5000;

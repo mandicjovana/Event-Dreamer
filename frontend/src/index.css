@@ -1,4 +1,4 @@
-/* === GOOGLE FONTOVI === */
+/* -google fontovi  */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Syne:wght@500;700;800&display=swap');
 
 /* boje koje koje su na logu*/
@@ -794,3 +794,285 @@ body {
   border-color: var(--logo-green);
   box-shadow: 0 0 0 3px rgba(221, 237, 212, 0.5); 
 }
+
+/* css dio za admin panel */
+/* glavni div za Admin panel */
+.admin-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 120px 20px 60px 20px;
+}
+
+/* div za ucitavanje i naslov za ucitavanje */
+.admin-loading {
+  padding-top: 150px;
+  text-align: center;
+}
+
+.admin-loading-title {
+  font-family: 'Syne', sans-serif;
+  color: #111;
+}
+
+/* za glavni naslov, podnaslove*/
+.admin-header { 
+  text-align: center; 
+  margin-bottom: 30px; 
+}
+
+.admin-title { 
+  margin: 0; 
+  font-size: 3rem; 
+  font-family: 'Syne', sans-serif; 
+  font-weight: 800; 
+  color: #111; 
+  letter-spacing: -1px; 
+}
+
+.admin-subtitle { 
+  color: #555; 
+  margin: 10px 0 0 0; 
+  font-weight: 500; 
+  font-size: 1.1rem; 
+}
+
+.admin-tabs-container { 
+  margin-bottom: 40px; 
+}
+/*za gridove*/
+.admin-grid-main { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+  gap: 30px; 
+  margin-bottom: 40px; 
+}
+
+.admin-grid-secondary { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+  gap: 20px; 
+}
+
+.admin-section-title { 
+  font-family: 'Syne', sans-serif; 
+  font-size: 1.5rem; 
+  color: #111; 
+  margin-bottom: 20px; 
+  border-bottom: 2px solid rgba(0,0,0,0.05); 
+  padding-bottom: 10px; 
+}
+
+.admin-table-title { 
+  font-family: 'Syne', sans-serif; 
+  margin-bottom: 20px; 
+  color: #111; 
+  font-size: 1.8rem; 
+  margin-top: 0; 
+}
+
+/* za kartice za korisnike i dogadjaje */
+.admin-stat-card {
+  padding: 40px 30px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  border-radius: 22px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.admin-stat-card.pink-top { border-top: 5px solid var(--logo-pink); }
+.admin-stat-card.green-top { border-top: 5px solid var(--logo-green); }
+
+.admin-stat-card:hover, .admin-vendor-card:hover {
+  transform: translateY(-5px);
+}
+
+/* tekst za kartice za korisnike i dogadjajw */
+.admin-stat-label { 
+  margin: 10px 0 5px 0; 
+  color: #555; 
+  font-size: 1.1rem; 
+  font-weight: 600; 
+}
+
+.admin-stat-number { 
+  font-size: 3rem; 
+  font-family: 'Syne', sans-serif; 
+  font-weight: 800; 
+  margin: 0; 
+  color: #111; 
+}
+
+/* manje kartice za posebne vendore */
+.admin-vendor-card {
+  padding: 25px 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: transform 0.3s ease;
+}
+
+.admin-vendor-icon { margin-bottom: 15px; }
+.admin-vendor-label { color: #444; margin: 0; font-size: 0.95rem; }
+.admin-vendor-number { font-size: 2rem; font-family: 'Syne', sans-serif; font-weight: 800; margin: 0; color: #111; }
+
+/* krugovi u ikonicama za statistiku korisnika i dogadjaja */
+.admin-icon-circle {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px auto;
+}
+
+.admin-icon-circle.pink {
+  background: var(--logo-pink);
+  box-shadow: 0 8px 20px rgba(246, 222, 234, 0.5);
+}
+
+.admin-icon-circle.green {
+  background: var(--logo-green);
+  box-shadow: 0 8px 20px rgba(188, 197, 170, 0.5);
+}
+
+/* za venndor filtere */
+.vendor-filter-header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 20px; 
+  flex-wrap: wrap; 
+  gap: 15px; 
+}
+
+.vendor-filter-group { 
+  display: flex; 
+  gap: 10px; 
+  flex-wrap: wrap; 
+  background: rgba(255,255,255,0.4); 
+  padding: 8px; 
+  border-radius: 50px; 
+}
+
+.filter-btn-small { 
+  padding: 8px 20px; 
+  font-size: 0.85rem; 
+  border: none; 
+}
+
+/* animacija i tabele */
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { 
+  from { opacity: 0; transform: translateY(10px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
+
+.table-responsive { overflow-x: auto; }
+
+/* tabele u admin panelu */
+.admin-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 12px;
+  text-align: left;
+}
+
+.admin-table th {
+  padding: 10px 20px;
+  color: #666;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.admin-table tr {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s ease;
+}
+
+.admin-table tr:hover {
+  transform: scale(1.01);
+}
+
+.admin-table td {
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.65);
+  vertical-align: middle;
+}
+
+/* zaobljene ivice za prvi i zadnji red u tabeli */
+.admin-table td:first-child { border-radius: 15px 0 0 15px; }
+.admin-table td:last-child { border-radius: 0 15px 15px 0; }
+
+/* za formatiranje specificnih celija u tabelama */
+.td-id { font-weight: 700; color: #888; }
+.td-bold-dark { font-weight: 600; color: #111; font-size: 1.05rem; }
+.td-gray { color: #555; white-space: nowrap; }
+.td-date { color: #444; font-weight: 500; }
+.td-price { font-weight: 800; color: #111; font-size: 1.1rem; }
+
+/* dugme vracanje nazad */
+.btn-back {
+  background: transparent;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 25px;
+  padding: 0;
+  transition: color 0.3s ease;
+}
+
+.btn-back:hover {
+  color: #111;
+}
+
+/* specifični bedževi */
+.admin-badge {
+  padding: 6px 15px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-admin { background:var(--logo-pink); color: #111; font-weight: 700; }
+.badge-user { background: var(--logo-green); color: #111; }
+.badge-category { background: var(--logo-green); color: #111; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
+.badge-date { 
+  background: rgba(255,255,255,0.8); 
+  padding: 5px 10px; 
+  border-radius: 8px; 
+  border: 1px solid rgba(0,0,0,0.05);
+  white-space: nowrap;
+}
+.badge-budget { 
+  background: var(--logo-pink); 
+  padding: 5px 12px; 
+  border-radius: 12px; 
+  font-weight: 700; 
+  color: #222;
+  display: inline-block;
+  white-space: nowrap; /* nema prelaska u novi red */
+}
+
+.price-tag { 
+  border-bottom: 2px solid var(--logo-pink); 
+  padding-bottom: 2px; 
+  white-space: nowrap; 
+}
+
+/* za user info */
+.user-info-group { display: flex; flex-direction: column; }
+.user-name { font-weight: 700; color: #111; white-space: nowrap;}
+.user-email { font-size: 0.8rem; color: #666; white-space: nowrap;}

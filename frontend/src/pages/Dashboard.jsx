@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import logoSlika from '../assets/logo.png';
 
 function Dashboard() {
   const [vendori, setVendori] = useState([]);
-  const [userEvents, setUserEvents] = useState([]); // Svi događaji ovog korisnika
+  const [userEvents, setUserEvents] = useState([]); // svi događaji ovog korisnika
   const [aktivnaKategorija, setAktivnaKategorija] = useState('Sve');
   
   // Stanja za iskačući prozor zakazivanja
@@ -12,15 +13,29 @@ function Dashboard() {
   const [chosenEventId, setChosenEventId] = useState('');
   const [bookingMessage, setBookingMessage] = useState('');
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const navigate = useNavigate(); // dodato za preusmjeravanje
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     
     if (!token) {
       console.error('Token nije pronađen! Korisnik vjerovatno nije ulogovan.');
+      setError('Molimo vas da se prijavite kako biste vidjeli vendore.');
+      setLoading(false);
       return;
     }
 
-    // Ucitavaju se svi vendori
+    // za upozorenje kad admin hoce da udje na dashboard
+    const roleId = localStorage.getItem('roleId');
+    if (Number(roleId) === 1) {
+      window.alert('❌ Pristup odbijen! Administratori nemaju pristup korisničkim stranicama.');
+      navigate('/admin'); 
+      return; 
+    }
+
+    // ucitavaju se svi vendori
     const fetchVendori = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/vendors', {
@@ -29,10 +44,11 @@ function Dashboard() {
         setVendori(response.data);
       } catch (error) {
         console.error('Greška pri učitavanju vendora:', error);
+        setError('Došlo je do greške pri učitavanju podataka.');
       }
     };
 
-    // Ucitavanje dogadjaja ulogovanog korisnika
+    // ucitavanje dogadjaja ulogovanog korisnika
     const fetchUserEvents = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/my-events', {
@@ -44,11 +60,14 @@ function Dashboard() {
       }
     };
 
-    fetchVendori();
-    fetchUserEvents();
-  }, []);
+    // Pokrećemo učitavanje i kad sve završi sklanjamo loading ekran
+    Promise.all([fetchVendori(), fetchUserEvents()]).then(() => {
+      setLoading(false);
+    });
 
-  // Funkcija za proces zakazivanja na backendu
+  }, [navigate]);
+
+  // funkcija za proces zakazivanja na backendu
   const handleConfirmBooking = async () => {
     const token = localStorage.getItem('token');
     if (!chosenEventId) {
@@ -71,13 +90,11 @@ function Dashboard() {
         setSelectedVendor(null);
         setChosenEventId('');
         setBookingMessage('');
-        // Za osvjezavanje dogadjaja
         window.location.reload(); 
       }, 2000);
 
     } catch (error) {
       console.error(error);
-      // Za specificnu poruku iz backenda
       if (error.response && error.response.data && error.response.data.poruka) {
         alert(error.response.data.poruka);
       } else {
@@ -100,6 +117,9 @@ function Dashboard() {
   const filtriraniVendori = aktivnaKategorija === 'Sve' 
     ? vendori 
     : vendori.filter((vendor) => Number(vendor.CategoryID) === aktivnaKategorija);
+
+  if (loading) return <div className="dashboard-container"><h2>Učitavanje... 🌸</h2></div>;
+  if (error) return <div className="dashboard-container"><h2 style={{color: 'red'}}>{error}</h2></div>;
 
   return (
     <div className="dashboard-container">
@@ -160,7 +180,6 @@ function Dashboard() {
                   <p><strong>Početna cijena:</strong> {vendor.BasePrice} €</p>
                 </div>
                 
-                {/* na klik idemo na zakazivanje*/}
                 <button 
                   className="contact-btn" 
                   onClick={() => setSelectedVendor(vendor)}
@@ -206,7 +225,6 @@ function Dashboard() {
                       >
                         <div className="event-option-info">
                           <h4>{event.Title}</h4>
-                          {/* za prikaz datuma dogadjaja*/}
                           <span className="event-option-date">
                             📅 {new Date(event.Date).toLocaleDateString('me-ME')}
                           </span>
