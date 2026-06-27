@@ -485,6 +485,14 @@ body {
   color: #222;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
+/* Dizajn za novo Hamburger dugme */
+.hamburger-btn {
+  display: none; /* Sakriveno na desktopu */
+  background: transparent;
+  border: none;
+  color: #111;
+  cursor: pointer;
+}
 /* css za navbar*/
 .glass-navbar {
   position: fixed;
@@ -1076,3 +1084,91 @@ body {
 .user-info-group { display: flex; flex-direction: column; }
 .user-name { font-weight: 700; color: #111; white-space: nowrap;}
 .user-email { font-size: 0.8rem; color: #666; white-space: nowrap;}
+
+/* responsive */
+
+
+/* ya tablete i vece telefone tj ekrane manje od 768px */
+@media (max-width: 768px) {
+  .home-title { 
+    font-size: 6.5vw !important; 
+    letter-spacing: -2px !important; 
+    white-space: nowrap !important; /* strogo zabranjuje prelazak u novi red */
+    padding: 0 10px !important;
+    line-height: 1.1 !important;
+  }
+  
+  .admin-title, .dashboard-title { font-size: 2.2rem !important; }
+  .home-subtitle { font-size: 1rem !important; padding: 0 15px !important; }
+  /* padajuci meni ako smo na telefonu */
+ 
+  .hamburger-btn { 
+    display: flex !important; /* prikazujemo dugme na telefonu */
+    align-items: center; 
+    justify-content: center; 
+  }
+  
+  /* vracamo tekst EventDreamer */
+  .nav-brand-name { display: block !important; } 
+
+  /* linkovi se pretvaraju u vertikalni padajuci meni */
+  .nav-links {
+    position: absolute;
+    top: 70px; 
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95); 
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    flex-direction: column !important;
+    padding: 30px 0 !important;
+    gap: 25px !important;
+    box-shadow: 0 15px 25px rgba(0,0,0,0.1);
+    display: none !important; /* zatvoreno na pocetku */
+    border-bottom: 3px solid var(--logo-green);
+  }
+
+  /* otvara ga ako je state = true */
+  .nav-links.active { 
+    display: flex !important; 
+  }
+
+  .nav-item { font-size: 1.1rem !important; }
+  .logout-btn { margin-top: 10px; width: 80%; max-width: 250px; }
+
+  /* glavni kontejneri */
+  .admin-wrapper, .dashboard-container { 
+    padding-top: 90px !important; 
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+
+  /* za dugmice */
+  .btn-group { 
+    flex-direction: column !important; 
+    width: 100% !important; 
+    max-width: 300px !important;
+    gap: 15px !important; 
+    margin: 0 auto !important;
+  }
+  .modern-btn { width: 100% !important; }
+
+  /* tabovi i admin brojevi*/
+  .category-tabs { gap: 8px !important; }
+  .tab-btn { padding: 8px 16px !important; font-size: 0.85rem !important; }
+  .admin-stat-number { font-size: 2.2rem !important; }
+}
+
+/* za ekrane manje od 480px */
+@media (max-width: 480px) {
+  .home-main-logo { height: 130px !important; }
+  .auth-card { padding: 30px 20px !important; }
+  .admin-section-title, .admin-table-title { font-size: 1.3rem !important; }
+  
+  /* prilagodjavanje naslova tome */
+  .home-title { 
+    font-size: 7vw !important; 
+    letter-spacing: -1px !important;
+    white-space: nowrap !important;
+  }
+}
