@@ -1,4 +1,4 @@
-/* -google fontovi  */
+/* google fontovi  */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Syne:wght@500;700;800&display=swap');
 
 /* boje koje koje su na logu*/
@@ -23,8 +23,8 @@ body {
   min-height: 100vh;
   color: #333;
 }
+/* css za početnu stranicu */
 
-/* css za pocetnu stranicu */
 .home-container {
   display: flex;
   flex-direction: column;
@@ -35,7 +35,6 @@ body {
   text-align: center;
 }
 
-/* logo za pocetnu */
 .home-main-logo {
   height: 200px !important; 
   width: auto;
@@ -109,8 +108,8 @@ body {
 .modern-btn:active {
   transform: translateY(-1px);
 }
+/*css za prijavu i registraciju */
 
-/* css za prijavu i registraciju*/
 .auth-container {
   display: flex;
   justify-content: center;
@@ -202,15 +201,125 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
+/* css za navbar i navigaciju */
 
-/* css za dashboard */
+.hamburger-btn {
+  display: none; 
+  background: transparent;
+  border: none;
+  color: #111;
+  cursor: pointer;
+}
+
+.glass-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  z-index: 1000; 
+  display: flex;
+  align-items: center;
+}
+
+.navbar-content {
+  width: 100%;
+  padding: 0 40px; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.nav-logo {
+  height: 40px;
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.nav-brand-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #111;
+  letter-spacing: -0.5px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.nav-item {
+  text-decoration: none;
+  color: #333;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nav-item:hover {
+  color: var(--logo-green);
+}
+
+.nav-item::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background-color: var(--logo-green);
+  transition: width 0.3s ease;
+}
+
+.nav-item:hover::after {
+  width: 100%;
+}
+
+.active-nav {
+  color: var(--logo-green);
+}
+
+.logout-btn {
+  padding: 8px 18px;
+  background: transparent;
+  color: #111;
+  border: 1px solid #111;
+  border-radius: 30px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: var(--logo-pink);
+  border-color: var(--logo-pink);
+  color: #222;
+}
+
+/* za dashboard korisnika */
+
 .dashboard-container {
   padding: 120px 20px 50px 20px; 
   min-height: 100vh;
   text-align: center;
 }
 
-/* logo za dashboard */
 .logo-container {
   display: flex;
   justify-content: center;
@@ -236,7 +345,7 @@ body {
   font-weight: 700;
 }
 
-/* Tabovi za filter kategoriju*/
+/* tabovi za filter kategoriju*/
 .category-tabs {
   display: flex;
   justify-content: center;
@@ -270,7 +379,6 @@ body {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Flexbox kontejner za sve kartice za vendore */
 .vendor-grid {
   display: flex;
   flex-wrap: wrap;
@@ -279,6 +387,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
 }
+
 .vendor-card {
   display: flex;
   flex-direction: column;
@@ -367,7 +476,8 @@ body {
   color: #222;
   border-color: var(--logo-green);
 }
-/*css dio za moje dogadjaje*/
+/*css za moje dogadjaje */
+
 .my-events-grid {
   display: flex;
   flex-direction: column;
@@ -406,7 +516,6 @@ body {
   font-weight: 500;
 }
 
-/* ya statistiku dogadjaja*/
 .event-stats {
   display: flex;
   gap: 20px;
@@ -444,7 +553,6 @@ body {
   font-weight: 500;
 }
 
-/* trake za napredak*/
 .progress-bar-bg {
   width: 100%;
   height: 8px;
@@ -467,7 +575,6 @@ body {
   background: var(--logo-green);
 }
 
-/* dugme za detalje */
 .details-btn {
   margin-top: 25px;
   padding: 10px 25px;
@@ -485,120 +592,7 @@ body {
   color: #222;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
-/* Dizajn za novo Hamburger dugme */
-.hamburger-btn {
-  display: none; /* Sakriveno na desktopu */
-  background: transparent;
-  border: none;
-  color: #111;
-  cursor: pointer;
-}
-/* css za navbar*/
-.glass-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 70px;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  z-index: 1000; /* nav bar ce uvijek biti iznad svega*/
-  display: flex;
-  align-items: center;
-}
-
-.navbar-content {
-  width: 100%;
-  padding: 0 40px; 
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* za logo u navbaru*/
-.nav-logo-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-}
-
-.nav-logo {
-  height: 40px;
-  width: auto;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-}
-
-.nav-brand-name {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #111;
-  letter-spacing: -0.5px;
-}
-
-/* za linkove sa desne strane navbara */
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 25px;
-}
-
-.nav-item {
-  text-decoration: none;
-  color: #333;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.nav-item:hover {
-  color: var(--logo-green);
-}
-
-/* za zelenu liniju ispod navbara*/
-.nav-item::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 2px;
-  bottom: -4px;
-  left: 0;
-  background-color: var(--logo-green);
-  transition: width 0.3s ease;
-}
-
-.nav-item:hover::after {
-  width: 100%;
-}
-
-.active-nav {
-  color: var(--logo-green);
-}
-
-/* dugme za odjavu */
-.logout-btn {
-  padding: 8px 18px;
-  background: transparent;
-  color: #111;
-  border: 1px solid #111;
-  border-radius: 30px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.logout-btn:hover {
-  background: var(--logo-pink);
-  border-color: var(--logo-pink);
-  color: #222;
-}
-/* Za prikaz detalja */
+/* css za modale i zakazivanje dogadjaja */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -681,7 +675,7 @@ body {
   padding-bottom: 8px;
   border-bottom: 1px dashed rgba(0,0,0,0.1);
 }
-/* css za zakazivanje dogadjaja */
+
 .event-selection-list {
   display: flex;
   flex-direction: column;
@@ -709,7 +703,6 @@ body {
   border-color: var(--logo-green);
 }
 
-/* kada se klikne kartica */
 .event-option-card.selected {
   background: var(--logo-pink);
   border-color: var(--logo-pink);
@@ -728,7 +721,6 @@ body {
   font-weight: 500;
 }
 
-/* za radio button*/
 .radio-circle {
   width: 20px;
   height: 20px;
@@ -743,7 +735,7 @@ body {
   background: #111;
   box-shadow: inset 0 0 0 4px var(--logo-pink);
 }
-/* css za kreiranje dogadjaja */
+
 .create-event-btn {
   background: var(--logo-green);
   color: #111;
@@ -802,16 +794,13 @@ body {
   border-color: var(--logo-green);
   box-shadow: 0 0 0 3px rgba(221, 237, 212, 0.5); 
 }
-
-/* css dio za admin panel */
-/* glavni div za Admin panel */
+/* css za admin panel za glavne stilove*/
 .admin-wrapper {
   max-width: 1100px;
   margin: 0 auto;
   padding: 120px 20px 60px 20px;
 }
 
-/* div za ucitavanje i naslov za ucitavanje */
 .admin-loading {
   padding-top: 150px;
   text-align: center;
@@ -822,7 +811,6 @@ body {
   color: #111;
 }
 
-/* za glavni naslov, podnaslove*/
 .admin-header { 
   text-align: center; 
   margin-bottom: 30px; 
@@ -847,7 +835,7 @@ body {
 .admin-tabs-container { 
   margin-bottom: 40px; 
 }
-/*za gridove*/
+
 .admin-grid-main { 
   display: grid; 
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
@@ -878,7 +866,6 @@ body {
   margin-top: 0; 
 }
 
-/* za kartice za korisnike i dogadjaje */
 .admin-stat-card {
   padding: 40px 30px;
   text-align: center;
@@ -896,7 +883,6 @@ body {
   transform: translateY(-5px);
 }
 
-/* tekst za kartice za korisnike i dogadjajw */
 .admin-stat-label { 
   margin: 10px 0 5px 0; 
   color: #555; 
@@ -912,7 +898,6 @@ body {
   color: #111; 
 }
 
-/* manje kartice za posebne vendore */
 .admin-vendor-card {
   padding: 25px 20px;
   text-align: center;
@@ -927,7 +912,6 @@ body {
 .admin-vendor-label { color: #444; margin: 0; font-size: 0.95rem; }
 .admin-vendor-number { font-size: 2rem; font-family: 'Syne', sans-serif; font-weight: 800; margin: 0; color: #111; }
 
-/* krugovi u ikonicama za statistiku korisnika i dogadjaja */
 .admin-icon-circle {
   width: 70px;
   height: 70px;
@@ -948,7 +932,6 @@ body {
   box-shadow: 0 8px 20px rgba(188, 197, 170, 0.5);
 }
 
-/* za venndor filtere */
 .vendor-filter-header { 
   display: flex; 
   justify-content: space-between; 
@@ -956,6 +939,19 @@ body {
   margin-bottom: 20px; 
   flex-wrap: wrap; 
   gap: 15px; 
+}
+
+.vendor-filter-header .admin-table-title {
+  margin: 0;
+}
+
+.btn-add-vendor {
+  padding: 8px 16px !important;
+  font-size: 0.9rem !important;
+}
+
+.vendor-filter-group-spaced {
+  margin-top: 20px;
 }
 
 .vendor-filter-group { 
@@ -973,7 +969,6 @@ body {
   border: none; 
 }
 
-/* animacija i tabele */
 .fade-in { animation: fadeIn 0.4s ease; }
 @keyframes fadeIn { 
   from { opacity: 0; transform: translateY(10px); } 
@@ -982,7 +977,6 @@ body {
 
 .table-responsive { overflow-x: auto; }
 
-/* tabele u admin panelu */
 .admin-table {
   width: 100%;
   border-collapse: separate;
@@ -1014,18 +1008,16 @@ body {
   vertical-align: middle;
 }
 
-/* zaobljene ivice za prvi i zadnji red u tabeli */
 .admin-table td:first-child { border-radius: 15px 0 0 15px; }
 .admin-table td:last-child { border-radius: 0 15px 15px 0; }
+.empty-table-row { text-align: center; }
 
-/* za formatiranje specificnih celija u tabelama */
 .td-id { font-weight: 700; color: #888; }
 .td-bold-dark { font-weight: 600; color: #111; font-size: 1.05rem; }
 .td-gray { color: #555; white-space: nowrap; }
 .td-date { color: #444; font-weight: 500; }
 .td-price { font-weight: 800; color: #111; font-size: 1.1rem; }
 
-/* dugme vracanje nazad */
 .btn-back {
   background: transparent;
   border: none;
@@ -1045,13 +1037,18 @@ body {
   color: #111;
 }
 
-/* specifični bedževi */
 .admin-badge {
   padding: 6px 15px;
   border-radius: 30px;
   font-size: 0.85rem;
   font-weight: 600;
   display: inline-block;
+}
+
+.admin-badge-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .badge-admin { background:var(--logo-pink); color: #111; font-weight: 700; }
@@ -1071,7 +1068,7 @@ body {
   font-weight: 700; 
   color: #222;
   display: inline-block;
-  white-space: nowrap; /* nema prelaska u novi red */
+  white-space: nowrap; 
 }
 
 .price-tag { 
@@ -1080,38 +1077,137 @@ body {
   white-space: nowrap; 
 }
 
-/* za user info */
 .user-info-group { display: flex; flex-direction: column; }
 .user-name { font-weight: 700; color: #111; white-space: nowrap;}
 .user-email { font-size: 0.8rem; color: #666; white-space: nowrap;}
 
-/* responsive */
+/* forma za dodavanje vendora na admin panelu */
+.admin-form-overlay {
+  margin: 20px 0 30px 0;
+}
+
+.admin-form-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+}
+
+.admin-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.admin-form-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #111;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+}
+
+.close-form-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.3s ease;
+}
+
+.close-form-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #111;
+  transform: rotate(90deg);
+}
+
+.admin-grid-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.modern-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  font-size: 1rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #333;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.modern-select:focus {
+  border-color: #111;
+  background-color: #fff;
+}
+
+.file-upload-wrapper input[type="file"] {
+  display: none; 
+}
+
+.file-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px dashed rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  color: #555;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.file-upload-label:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #111;
+  color: #111;
+}
+/* media queries za telefone i tablete*/
 
 
-/* ya tablete i vece telefone tj ekrane manje od 768px */
 @media (max-width: 768px) {
   .home-title { 
     font-size: 6.5vw !important; 
     letter-spacing: -2px !important; 
-    white-space: nowrap !important; /* strogo zabranjuje prelazak u novi red */
+    white-space: nowrap !important;
     padding: 0 10px !important;
     line-height: 1.1 !important;
   }
   
   .admin-title, .dashboard-title { font-size: 2.2rem !important; }
   .home-subtitle { font-size: 1rem !important; padding: 0 15px !important; }
-  /* padajuci meni ako smo na telefonu */
- 
+  
   .hamburger-btn { 
-    display: flex !important; /* prikazujemo dugme na telefonu */
+    display: flex !important; 
     align-items: center; 
     justify-content: center; 
   }
   
-  /* vracamo tekst EventDreamer */
   .nav-brand-name { display: block !important; } 
 
-  /* linkovi se pretvaraju u vertikalni padajuci meni */
   .nav-links {
     position: absolute;
     top: 70px; 
@@ -1124,11 +1220,10 @@ body {
     padding: 30px 0 !important;
     gap: 25px !important;
     box-shadow: 0 15px 25px rgba(0,0,0,0.1);
-    display: none !important; /* zatvoreno na pocetku */
+    display: none !important; 
     border-bottom: 3px solid var(--logo-green);
   }
 
-  /* otvara ga ako je state = true */
   .nav-links.active { 
     display: flex !important; 
   }
@@ -1136,14 +1231,12 @@ body {
   .nav-item { font-size: 1.1rem !important; }
   .logout-btn { margin-top: 10px; width: 80%; max-width: 250px; }
 
-  /* glavni kontejneri */
   .admin-wrapper, .dashboard-container { 
     padding-top: 90px !important; 
     padding-left: 15px !important;
     padding-right: 15px !important;
   }
 
-  /* za dugmice */
   .btn-group { 
     flex-direction: column !important; 
     width: 100% !important; 
@@ -1153,19 +1246,21 @@ body {
   }
   .modern-btn { width: 100% !important; }
 
-  /* tabovi i admin brojevi*/
   .category-tabs { gap: 8px !important; }
   .tab-btn { padding: 8px 16px !important; font-size: 0.85rem !important; }
   .admin-stat-number { font-size: 2.2rem !important; }
+
+  /* forma za dodavanje vendora u jednoj koloni */
+  .admin-grid-form {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* za ekrane manje od 480px */
 @media (max-width: 480px) {
   .home-main-logo { height: 130px !important; }
   .auth-card { padding: 30px 20px !important; }
   .admin-section-title, .admin-table-title { font-size: 1.3rem !important; }
   
-  /* prilagodjavanje naslova tome */
   .home-title { 
     font-size: 7vw !important; 
     letter-spacing: -1px !important;

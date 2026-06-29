@@ -36,7 +36,7 @@ function MyEvents() {
       return;
     }
 
-    // // za upozorenje kad admin hoce da udje na my-events
+    // za upozorenje kad admin hoce da udje na my-events
     const roleId = localStorage.getItem('roleId');
     if (Number(roleId) === 1) {
       window.alert('❌ Pristup odbijen! Administratori nemaju pristup korisničkim stranicama.');
@@ -209,6 +209,20 @@ function MyEvents() {
             const ukupnoZadataka = event.tasks ? event.tasks.length : 0;
             const ukupnoGostiju = event.guests ? event.guests.length : 0;
             const potvrdiliGosti = event.guests ? event.guests.filter(g => g.RSVPStatus === 'Potvrdio').length : 0;
+            
+            // imena svih rezervisanih vendora za glavnu karticu
+            let rezervisaniVendori = 'Još uvijek nema rezervacija';
+            if (event.expenses && event.expenses.length > 0) {
+              const ostaliVendori = event.expenses
+                .map(e => e.VendorName || "Nepoznat vendor")
+                .filter(imeVendora => !event.Location.includes(imeVendora)); // Filtrira duplikat!
+              
+              if (ostaliVendori.length > 0) {
+                rezervisaniVendori = ostaliVendori.join(', ');
+              } else {
+                rezervisaniVendori = 'Za sada rezervisana samo lokacija';
+              }
+            }
 
             return (
               <div key={event.Id} className="event-glass-card">
@@ -216,6 +230,10 @@ function MyEvents() {
                   <h2>{event.Title}</h2>
                   <span className="event-date">📅 {formatDate(event.Date)}</span>
                   <span className="event-location">📍 {event.Location}</span>
+                  {/*prikay rezervisanih vendora na glavnoj kartici*/}
+                  <span className="event-location" style={{ marginTop: '10px', color: '#137333', fontWeight: '600' }}>
+                    🏪 Rezervisano: <span style={{ color: '#444', fontWeight: '500' }}>{rezervisaniVendori}</span>
+                  </span>
                 </div>
 
                 <div className="event-stats">
@@ -393,15 +411,22 @@ function MyEvents() {
                 </form>
               </div>
 
-              {/* sekcija za placanje */}
+              {/* sekcija za placanje I VENDORE */}
               <div className="modal-section" style={{ minHeight: '350px' }}>
-                <h3>💸 Plaćanja Vendora</h3>
+                <h3>🏪 Rezervisani Vendori</h3>
                 <ul style={{ maxHeight: '310px', overflowY: 'auto', paddingRight: '5px' }}>
                   {selectedEvent.expenses && selectedEvent.expenses.length > 0 ? selectedEvent.expenses.map(expense => (
                     <li key={expense.Id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px dashed rgba(0,0,0,0.1)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ fontWeight: '600', fontSize: '0.95rem', color: '#111' }}>{expense.VendorName}</span>
-                        <span style={{ fontSize: '0.9rem', color: '#555' }}>Iznos: {expense.ActualAmount} €</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: '700', fontSize: '1.05rem', color: '#111' }}>
+                          {expense.VendorName || 'Nepoznat vendor'}
+                        </span>
+                        <span style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic' }}>
+                          {expense.ExpenseName.replace('Angažovanje: ', '')}
+                        </span>
+                        <span style={{ fontSize: '0.95rem', color: '#333', fontWeight: '500' }}>
+                          Iznos: {expense.ActualAmount} €
+                        </span>
                       </div>
                       <select 
                         value={expense.IsPaid ? "1" : "0"} 

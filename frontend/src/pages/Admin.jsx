@@ -16,6 +16,15 @@ function Admin() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [vendorData, setVendorData] = useState({
+    CategoryID: '',
+    Name: '',
+    Contact: '',
+    BasePrice: ''
+  });
+  const [slika, setSlika] = useState(null);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const roleId = localStorage.getItem('roleId');
@@ -47,6 +56,58 @@ function Admin() {
 
     fetchAllAdminData();
   }, [navigate]);
+
+  const handleAddVendor = async (e) => {
+    e.preventDefault();
+  
+    if (!slika) {
+      alert('Slika za vendora je obavezna!');
+      return;
+    }
+  
+    try {
+      const token = localStorage.getItem('token');
+      
+      const formData = new FormData();
+      formData.append('slika', slika);
+  
+      const uploadResponse = await axios.post('http://localhost:5000/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+  
+      const imagePath = uploadResponse.data.ImagePath; 
+  
+      const vendorResponse = await axios.post('http://localhost:5000/api/vendors', {
+        CategoryID: vendorData.CategoryID,
+        Name: vendorData.Name,
+        Contact: vendorData.Contact,
+        BasePrice: vendorData.BasePrice,
+        ImagePath: imagePath 
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+  
+      alert(vendorResponse.data.poruka || 'Vendor uspješno dodat!');
+      
+      const vendorsRes = await axios.get('http://localhost:5000/api/vendors', { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      setVendorsList(vendorsRes.data);
+
+      setVendorData({ CategoryID: '', Name: '', Contact: '', BasePrice: '' });
+      setSlika(null);
+      setShowAddForm(false);
+  
+    } catch (error) {
+      console.error('Greška:', error);
+      alert('Došlo je do greške pri dodavanju vendora.');
+    }
+  };
 
   const getNazivKategorije = (id) => {
     switch(Number(id)) {
@@ -178,14 +239,14 @@ function Admin() {
                     <td className="td-gray">{user.Email}</td>
                     <td>
                       {user.RoleId === 1 ? (
-                        <span className="admin-badge badge-admin" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="admin-badge badge-admin admin-badge-flex">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                           </svg>
                           Admin
                         </span>
                       ) : (
-                        <span className="admin-badge badge-user" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="admin-badge badge-user admin-badge-flex">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
@@ -196,7 +257,7 @@ function Admin() {
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan="4" className="td-first" style={{ textAlign: 'center' }}>Nema registrovanih korisnika.</td></tr>
+                  <tr><td colSpan="4" className="td-first empty-table-row">Nema registrovanih korisnika.</td></tr>
                 )}
               </tbody>
             </table>
@@ -208,7 +269,7 @@ function Admin() {
       {activeTab === 'events' && (
         <div className="fade-in">
           <DugmeNazad />
-          <h2 className="admin-table-title">Svi kreirani događaji na platformi</h2>
+          <h2 className="admin-table-title">Svi kreirani događaji</h2>
           <div className="table-responsive">
             <table className="admin-table">
               <thead>
@@ -239,7 +300,7 @@ function Admin() {
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan="5" className="td-first" style={{ textAlign: 'center' }}>Trenutno nema kreiranih događaja u sistemu.</td></tr>
+                  <tr><td colSpan="5" className="td-first empty-table-row">Trenutno nema kreiranih događaja u sistemu.</td></tr>
                 )}
               </tbody>
             </table>
@@ -251,17 +312,82 @@ function Admin() {
       {activeTab === 'vendors' && (
         <div className="fade-in">
           <DugmeNazad />
+          
           <div className="vendor-filter-header">
-            <h2 className="admin-table-title">Baza vendora</h2>
-            <div className="vendor-filter-group">
-              <button className={`tab-btn filter-btn-small ${vendorCategory === 'Sve' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 'Sve' })}>Sve</button>
-              <button className={`tab-btn filter-btn-small ${vendorCategory === 1 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 1 })}>Sale / restorani</button>
-              <button className={`tab-btn filter-btn-small ${vendorCategory === 2 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 2 })}>Fotografi</button>
-              <button className={`tab-btn filter-btn-small ${vendorCategory === 3 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 3 })}>Muzika</button>
-              <button className={`tab-btn filter-btn-small ${vendorCategory === 4 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 4 })}>Dekoracija</button>
-              <button className={`tab-btn filter-btn-small ${vendorCategory === 5 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 5 })}>Torte</button>
-            </div>
+            <h2 className="admin-table-title">Svi vendori</h2>
+            
+            <button 
+              className="modern-btn btn-add-vendor" 
+              onClick={() => setShowAddForm(!showAddForm)}
+            >
+              {showAddForm ? 'Odustani' : '+ Dodaj vendora'}
+            </button>
           </div>
+
+          {showAddForm && (
+            <div className="admin-form-overlay fade-in">
+              <div className="admin-form-card">
+                <div className="admin-form-header">
+                  <h3>Dodaj novog vendora</h3>
+                  <button type="button" className="close-form-btn" onClick={() => setShowAddForm(false)}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                </div>
+                
+                <form onSubmit={handleAddVendor} className="admin-grid-form">
+                  <div className="input-group">
+                    <label>Naziv vendora</label>
+                    <input type="text" placeholder="Npr. Imanje Knjaz" value={vendorData.Name} onChange={(e) => setVendorData({...vendorData, Name: e.target.value})} required />
+                  </div>
+
+                  <div className="input-group">
+                    <label>Kategorija</label>
+                    <select value={vendorData.CategoryID} onChange={(e) => setVendorData({...vendorData, CategoryID: e.target.value})} required className="modern-select">
+                      <option value="" disabled>Izaberite kategoriju...</option>
+                      <option value="1">Sala / restoran</option>
+                      <option value="2">Fotograf</option>
+                      <option value="3">Muzika / bend</option>
+                      <option value="4">Dekoracija</option>
+                      <option value="5">Torte i slatkiši</option>
+                    </select>
+                  </div>
+
+                  <div className="input-group">
+                    <label>Kontakt</label>
+                    <input type="text" placeholder="Broj telefona ili Email" value={vendorData.Contact} onChange={(e) => setVendorData({...vendorData, Contact: e.target.value})} required />
+                  </div>
+
+                  <div className="input-group">
+                    <label>Početna cijena (€)</label>
+                    <input type="number" placeholder="Npr. 500" value={vendorData.BasePrice} onChange={(e) => setVendorData({...vendorData, BasePrice: e.target.value})} required />
+                  </div>
+
+                  <div className="input-group full-width">
+                    <label>Slika vendora</label>
+                    <div className="file-upload-wrapper">
+                      <input type="file" id="file-upload" accept="image/*" onChange={(e) => setSlika(e.target.files[0])} required />
+                      <label htmlFor="file-upload" className="file-upload-label">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        {slika ? slika.name : 'Kliknite da izaberete sliku sa uređaja'}
+                      </label>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="auth-btn full-width" style={{marginTop: '10px'}}>Sačuvaj vendora u bazu</button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          <div className="vendor-filter-group vendor-filter-group-spaced">
+            <button className={`tab-btn filter-btn-small ${vendorCategory === 'Sve' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 'Sve' })}>Sve</button>
+            <button className={`tab-btn filter-btn-small ${vendorCategory === 1 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 1 })}>Sale / restorani</button>
+            <button className={`tab-btn filter-btn-small ${vendorCategory === 2 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 2 })}>Fotografi</button>
+            <button className={`tab-btn filter-btn-small ${vendorCategory === 3 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 3 })}>Muzika</button>
+            <button className={`tab-btn filter-btn-small ${vendorCategory === 4 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 4 })}>Dekoracija</button>
+            <button className={`tab-btn filter-btn-small ${vendorCategory === 5 ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 5 })}>Torte</button>
+          </div>
+          
           <div className="table-responsive">
             <table className="admin-table">
               <thead>
@@ -285,11 +411,12 @@ function Admin() {
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan="4" className="td-first" style={{ textAlign: 'center' }}>Nema vendora u odabranoj kategoriji.</td></tr>
+                  <tr><td colSpan="4" className="td-first empty-table-row">Nema vendora u odabranoj kategoriji.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+
         </div>
       )}
 
