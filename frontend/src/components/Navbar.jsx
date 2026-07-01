@@ -18,10 +18,10 @@ function Navbar() {
 
   const handleLogout = () => {
     localStorage.clear(); 
-    navigate('/login'); 
+    navigate('/');
   };
 
-  // zatvara meni kad god se klikne neki ling
+  // zatvara meni kad god se klikne neki link
   const closeMenu = () => setIsMobileMenuOpen(false);
 
   return (

@@ -17,13 +17,33 @@ function Admin() {
   const navigate = useNavigate();
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const [vendorData, setVendorData] = useState({
-    CategoryID: '',
-    Name: '',
-    Contact: '',
-    BasePrice: ''
-  });
+  const [vendorData, setVendorData] = useState({ CategoryID: '', Name: '', Contact: '', BasePrice: '' });
   const [slika, setSlika] = useState(null);
+
+  const [editRowId, setEditRowId] = useState(null);
+  const [editFormData, setEditFormData] = useState({ CategoryID: '', Name: '', Contact: '', BasePrice: '' });
+  const [editFile, setEditFile] = useState(null);
+
+  const fetchAllAdminData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const [statsRes, usersRes, vendorsRes, eventsRes] = await Promise.all([
+        axios.get('http://localhost:5000/api/admin/stats', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('http://localhost:5000/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('http://localhost:5000/api/vendors', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('http://localhost:5000/api/admin/events', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      
+      setStats(statsRes.data);
+      setUsersList(usersRes.data);
+      setVendorsList(vendorsRes.data);
+      setAllEventsList(eventsRes.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Greška pri učitavanju admin podataka:', error);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -34,79 +54,121 @@ function Admin() {
       return;
     }
 
-    const fetchAllAdminData = async () => {
-      try {
-        const [statsRes, usersRes, vendorsRes, eventsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/admin/stats', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('http://localhost:5000/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('http://localhost:5000/api/vendors', { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get('http://localhost:5000/api/admin/events', { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        
-        setStats(statsRes.data);
-        setUsersList(usersRes.data);
-        setVendorsList(vendorsRes.data);
-        setAllEventsList(eventsRes.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Greška pri učitavanju admin podataka:', error);
-        setLoading(false);
-      }
-    };
-
     fetchAllAdminData();
   }, [navigate]);
+
+  const handleEditClick = (vendor) => {
+    setEditRowId(vendor.Id);
+    setEditFormData({
+      CategoryID: vendor.CategoryID,
+      Name: vendor.Name,
+      Contact: vendor.Contact,
+      BasePrice: vendor.BasePrice
+    });
+    setEditFile(null); 
+  };
+
+  const cancelEdit = () => {
+    setEditRowId(null);
+    setEditFormData({ CategoryID: '', Name: '', Contact: '', BasePrice: '' });
+    setEditFile(null);
+  };
+
+  const handleSaveInline = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      let imagePath = '';
+
+      if (editFile) {
+        const formData = new FormData();
+        formData.append('slika', editFile);
+        const uploadResponse = await axios.post('http://localhost:5000/api/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${token}` }
+        });
+        imagePath = uploadResponse.data.ImagePath;
+      }
+
+      const payload = {
+        CategoryID: editFormData.CategoryID,
+        Name: editFormData.Name,
+        Contact: editFormData.Contact,
+        BasePrice: editFormData.BasePrice
+      };
+      if (imagePath) payload.ImagePath = imagePath;
+
+      await axios.put(`http://localhost:5000/api/admin/vendors/${id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      alert('Podaci o vendoru uspješno izmijenjeni!');
+      await fetchAllAdminData();
+      cancelEdit(); 
+    } catch (error) {
+      console.error('Greška:', error);
+      alert('Došlo je do greške prilikom izmjene vendora.');
+    }
+  };
+
+  const handleDeleteVendor = async (id) => {
+    if (!window.confirm('Da li ste sigurni da želite da obrišete ovog vendora?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/api/admin/vendors/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      alert('Vendor uspješno obrisan!');
+      setVendorsList(vendorsList.filter(vendor => vendor.Id !== id));
+      setStats(prev => ({ ...prev, ukupnoVendora: prev.ukupnoVendora - 1 }));
+    } catch (error) {
+      console.error('Greška pri brisanju vendora:', error);
+      alert('Došlo je do greške pri brisanju vendora.');
+    }
+  };
 
   const handleAddVendor = async (e) => {
     e.preventDefault();
   
     if (!slika) {
-      alert('Slika za vendora je obavezna!');
+      alert('Slika za novog vendora je obavezna!');
       return;
     }
   
     try {
       const token = localStorage.getItem('token');
-      
       const formData = new FormData();
       formData.append('slika', slika);
   
       const uploadResponse = await axios.post('http://localhost:5000/api/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${token}` }
       });
+      const imagePath = uploadResponse.data.ImagePath;
   
-      const imagePath = uploadResponse.data.ImagePath; 
-  
-      const vendorResponse = await axios.post('http://localhost:5000/api/vendors', {
+      await axios.post('http://localhost:5000/api/vendors', {
         CategoryID: vendorData.CategoryID,
         Name: vendorData.Name,
         Contact: vendorData.Contact,
         BasePrice: vendorData.BasePrice,
         ImagePath: imagePath 
       }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
-  
-      alert(vendorResponse.data.poruka || 'Vendor uspješno dodat!');
-      
-      const vendorsRes = await axios.get('http://localhost:5000/api/vendors', { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      setVendorsList(vendorsRes.data);
 
-      setVendorData({ CategoryID: '', Name: '', Contact: '', BasePrice: '' });
-      setSlika(null);
-      setShowAddForm(false);
+      alert('Vendor uspješno dodat!');
+      await fetchAllAdminData();
+      resetujFormu();
   
     } catch (error) {
       console.error('Greška:', error);
-      alert('Došlo je do greške pri dodavanju vendora.');
+      alert('Došlo je do greške prilikom obrade podataka.');
     }
+  };
+
+  const resetujFormu = () => {
+    setVendorData({ CategoryID: '', Name: '', Contact: '', BasePrice: '' });
+    setSlika(null);
+    setShowAddForm(false);
   };
 
   const getNazivKategorije = (id) => {
@@ -163,7 +225,6 @@ function Admin() {
         <button className={`tab-btn ${activeTab === 'vendors' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 'Sve' })}>🏪 Vendori</button>
       </div>
 
-      {/* za statistiku */}
       {activeTab === 'stats' && (
         <div className="fade-in">
           <div className="admin-grid-main">
@@ -216,7 +277,6 @@ function Admin() {
         </div>
       )}
 
-      {/* za sve korisnike */}
       {activeTab === 'users' && (
         <div className="fade-in">
           <DugmeNazad />
@@ -234,10 +294,10 @@ function Admin() {
               <tbody>
                 {usersList.length > 0 ? usersList.map((user) => (
                   <tr key={user.Id}>
-                    <td className="td-id">#{user.Id}</td>
-                    <td className="td-bold-dark">{user.FirstName} {user.LastName}</td>
-                    <td className="td-gray">{user.Email}</td>
-                    <td>
+                    <td data-label="ID" className="td-id">#{user.Id}</td>
+                    <td data-label="Ime i prezime" className="td-bold-dark">{user.FirstName} {user.LastName}</td>
+                    <td data-label="Email adresa" className="td-gray">{user.Email}</td>
+                    <td data-label="Uloga">
                       {user.RoleId === 1 ? (
                         <span className="admin-badge badge-admin admin-badge-flex">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -265,7 +325,6 @@ function Admin() {
         </div>
       )}
 
-      {/* za sve dogadjaje */}
       {activeTab === 'events' && (
         <div className="fade-in">
           <DugmeNazad />
@@ -284,15 +343,15 @@ function Admin() {
               <tbody>
                 {allEventsList.length > 0 ? allEventsList.map((ev) => (
                   <tr key={ev.Id}>
-                    <td className="td-bold-dark">{ev.Title}</td>
-                    <td className="td-date">
+                    <td data-label="Naziv događaja" className="td-bold-dark">{ev.Title}</td>
+                    <td data-label="Datum" className="td-date">
                       <span className="badge-date">📅 {formatDate(ev.Date)}</span>
                     </td>
-                    <td className="td-gray">📍 {ev.Location}</td>
-                    <td>
+                    <td data-label="Lokacija" className="td-gray">📍 {ev.Location}</td>
+                    <td data-label="Budžet">
                       <span className="badge-budget">{ev.TotalBudget} €</span>
                     </td>
-                    <td>
+                    <td data-label="Kreator">
                       <div className="user-info-group">
                         <span className="user-name">{ev.FirstName} {ev.LastName}</span>
                         <span className="user-email">{ev.Email}</span>
@@ -308,17 +367,18 @@ function Admin() {
         </div>
       )}
 
-      {/* za vendore */}
       {activeTab === 'vendors' && (
         <div className="fade-in">
           <DugmeNazad />
           
           <div className="vendor-filter-header">
             <h2 className="admin-table-title">Svi vendori</h2>
-            
             <button 
               className="modern-btn btn-add-vendor" 
-              onClick={() => setShowAddForm(!showAddForm)}
+              onClick={() => {
+                if (showAddForm) resetujFormu();
+                else setShowAddForm(true);
+              }}
             >
               {showAddForm ? 'Odustani' : '+ Dodaj vendora'}
             </button>
@@ -329,9 +389,6 @@ function Admin() {
               <div className="admin-form-card">
                 <div className="admin-form-header">
                   <h3>Dodaj novog vendora</h3>
-                  <button type="button" className="close-form-btn" onClick={() => setShowAddForm(false)}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                  </button>
                 </div>
                 
                 <form onSubmit={handleAddVendor} className="admin-grid-form">
@@ -373,7 +430,9 @@ function Admin() {
                     </div>
                   </div>
 
-                  <button type="submit" className="auth-btn full-width" style={{marginTop: '10px'}}>Sačuvaj vendora u bazu</button>
+                  <button type="submit" className="auth-btn full-width mt-10">
+                    Sačuvaj vendora u bazu
+                  </button>
                 </form>
               </div>
             </div>
@@ -396,22 +455,75 @@ function Admin() {
                   <th>Kategorija</th>
                   <th>Kontakt</th>
                   <th>Početna cijena</th>
+                  <th className="td-actions">Akcije</th>
                 </tr>
               </thead>
               <tbody>
-                {filtriraniVendori.length > 0 ? filtriraniVendori.map((vendor) => (
-                  <tr key={vendor.Id}>
-                    <td className="td-bold-dark">{vendor.Name}</td>
-                    <td>
-                      <span className="badge-category">{getNazivKategorije(vendor.CategoryID)}</span>
-                    </td>
-                    <td className="td-gray">{vendor.Contact}</td>
-                    <td className="td-price">
-                       <span className="price-tag">{vendor.BasePrice} €</span>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr><td colSpan="4" className="td-first empty-table-row">Nema vendora u odabranoj kategoriji.</td></tr>
+                {filtriraniVendori.length > 0 ? filtriraniVendori.map((vendor) => {
+                  
+                  // prikaz inputa ako je ovo red koji treba da izmijenimo
+                  if (editRowId === vendor.Id) {
+                    return (
+                      <tr key={vendor.Id} className="edit-row-active">
+                        <td data-label="Naziv vendora">
+                          <input type="text" value={editFormData.Name} onChange={(e) => setEditFormData({...editFormData, Name: e.target.value})} className="modern-select inline-edit-input" />
+                        </td>
+                        <td data-label="Kategorija">
+                          <select value={editFormData.CategoryID} onChange={(e) => setEditFormData({...editFormData, CategoryID: e.target.value})} className="modern-select inline-edit-input">
+                            <option value="1">Sala / restoran</option>
+                            <option value="2">Fotograf</option>
+                            <option value="3">Muzika / bend</option>
+                            <option value="4">Dekoracija</option>
+                            <option value="5">Torte i slatkiši</option>
+                          </select>
+                        </td>
+                        <td data-label="Kontakt">
+                          <input type="text" value={editFormData.Contact} onChange={(e) => setEditFormData({...editFormData, Contact: e.target.value})} className="modern-select inline-edit-input" />
+                        </td>
+                        <td data-label="Početna cijena">
+                          <input type="number" value={editFormData.BasePrice} onChange={(e) => setEditFormData({...editFormData, BasePrice: e.target.value})} className="modern-select inline-edit-input-small" />
+                        </td>
+                        <td data-label="Akcije" className="td-actions">
+                          <div className="action-buttons-col">
+                            <div className="action-buttons-row">
+                              <button onClick={() => handleSaveInline(vendor.Id)} className="logout-btn btn-save-inline">✔ Sačuvaj</button>
+                              <button onClick={cancelEdit} className="logout-btn btn-cancel-inline">✖ Odustani</button>
+                            </div>
+                            <label className="inline-image-label">
+                               <input type="file" style={{display: 'none'}} accept="image/*" onChange={(e) => setEditFile(e.target.files[0])}/>
+                               {editFile ? '🖼️ Slika uspješno dodata' : '📸 Promijeni sliku vendora'}
+                            </label>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  }
+
+                  // ako ne mijenjamo da se prikaze tekst
+                  return (
+                    <tr key={vendor.Id}>
+                      <td data-label="Naziv vendora" className="td-bold-dark">{vendor.Name}</td>
+                      <td data-label="Kategorija">
+                        <span className="badge-category">{getNazivKategorije(vendor.CategoryID)}</span>
+                      </td>
+                      <td data-label="Kontakt" className="td-gray">{vendor.Contact}</td>
+                      <td data-label="Početna cijena" className="td-price">
+                         <span className="price-tag">{vendor.BasePrice} €</span>
+                      </td>
+                      <td data-label="Akcije" className="td-actions">
+                        <div className="action-buttons-row">
+                          <button className="logout-btn btn-edit-action" onClick={() => handleEditClick(vendor)}>
+                            📝 Izmijeni
+                          </button>
+                          <button className="logout-btn btn-delete-action" onClick={() => handleDeleteVendor(vendor.Id)}>
+                            🗑️ Obriši
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                }) : (
+                  <tr><td colSpan="5" className="td-first empty-table-row">Nema vendora u odabranoj kategoriji.</td></tr>
                 )}
               </tbody>
             </table>

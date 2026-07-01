@@ -9,26 +9,21 @@ function MyEvents() {
   
   const [selectedEvent, setSelectedEvent] = useState(null); 
   
-  // Stanja za kreiranje događaja
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [eventTypes, setEventTypes] = useState([]);
-  const [venues, setVenues] = useState([]); 
   const [newEvent, setNewEvent] = useState({
     title: '',
     eventTypeId: '',
     date: '',
-    location: '',
     totalBudget: ''
   });
 
-  // stanja za unose unutar prozora za detalje
   const [inputTaskName, setInputTaskName] = useState('');
   const [inputGuestFirst, setInputGuestFirst] = useState('');
   const [inputGuestLast, setInputGuestLast] = useState('');
 
   const navigate = useNavigate();
 
-  // funkcija za učitavanje svih podataka sa servera
   const fetchAllData = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -36,7 +31,6 @@ function MyEvents() {
       return;
     }
 
-    // za upozorenje kad admin hoce da udje na my-events
     const roleId = localStorage.getItem('roleId');
     if (Number(roleId) === 1) {
       window.alert('❌ Pristup odbijen! Administratori nemaju pristup korisničkim stranicama.');
@@ -53,13 +47,6 @@ function MyEvents() {
       const responseTypes = await axios.get('http://localhost:5000/api/event-types');
       setEventTypes(responseTypes.data);
 
-      const responseVendors = await axios.get('http://localhost:5000/api/vendors', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const samoSale = responseVendors.data.filter(v => Number(v.CategoryID) === 1);
-      setVenues(samoSale);
-
-      // za azuriranje podataka ako je modal otvoren
       if (selectedEvent) {
         const trenutniEvent = responseEvents.data.find(e => e.Id === selectedEvent.Id);
         if (trenutniEvent) setSelectedEvent(trenutniEvent);
@@ -120,7 +107,6 @@ function MyEvents() {
     }
   };
 
-  //funkcija za promjenu placanja troska
   const handleToggleExpensePaid = async (expenseId, currentStatus) => {
     const token = localStorage.getItem('token');
     const newStatus = !currentStatus; 
@@ -136,7 +122,54 @@ function MyEvents() {
     }
   };
 
-  // funkcija za dodavanje zadataka na klik
+  // funkcija za izmjenu broja gostiju i racunanje cijene
+  const handleUpdateGuestsCount = async (expense, eventId) => {
+    // 1. Pitamo korisnika za konačan broj gostiju
+    const unos = window.prompt("Unesite konačan broj gostiju:");
+    if (!unos) return; // Odustao
+
+    const noviBroj = parseInt(unos, 10);
+    if (isNaN(noviBroj) || noviBroj <= 0) {
+      alert('Molimo unesite validan broj veći od nule.');
+      return;
+    }
+
+    // izvlacimo cijenu iz stringa
+    const match = expense.ExpenseName.match(/- ([\d.]+) € po osobi/);
+    if (!match) {
+      alert('Nije moguće izmijeniti goste za ovu uslugu.');
+      return;
+    }
+
+    const cijenaPoOsobi = parseFloat(match[1]);
+    const novaUkupnaCijena = cijenaPoOsobi * noviBroj;
+
+    // i broj gostiju
+    const stariOpis = expense.ExpenseName;
+    const noviOpis = stariOpis.replace(/za \d+ osoba/, `za ${noviBroj} osoba`);
+
+    //saljemo na backend provjeru budzeta i upis
+    const token = localStorage.getItem('token');
+    try {
+      await axios.put(`http://localhost:5000/api/expenses/${expense.Id}/update-guests`, {
+        eventId: eventId,
+        newAmount: novaUkupnaCijena,
+        newExpenseName: noviOpis
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('✅ Konačan broj gostiju i cijena su uspješno ažurirani!');
+      fetchAllData();
+    } catch (error) {
+      console.error(error);
+      if (error.response?.data?.poruka) {
+        alert(error.response.data.poruka); // greska ako je budzet probijen
+      } else {
+        alert('Došlo je do greške pri ažuriranju.');
+      }
+    }
+  };
+
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!inputTaskName.trim()) return;
@@ -154,7 +187,6 @@ function MyEvents() {
     }
   };
 
-  // funkcija za dodavanje novog gosta na klik
   const handleAddGuest = async (e) => {
     e.preventDefault();
     if (!inputGuestFirst.trim() || !inputGuestLast.trim()) return;
@@ -174,12 +206,9 @@ function MyEvents() {
     }
   };
 
-  // Funkcija za potvrdu da li zelimo da izadjemo iz prikza detaja
   const handleCloseModal = () => {
     const isConfirmed = window.confirm("Da li ste sigurni da želite da zatvorite prozor? Sve promjene koje ste napravili su već uspješno sačuvane.");
-    if (isConfirmed) {
-      setSelectedEvent(null);
-    }
+    if (isConfirmed) setSelectedEvent(null);
   };
   
   const formatDate = (dateString) => {
@@ -210,12 +239,11 @@ function MyEvents() {
             const ukupnoGostiju = event.guests ? event.guests.length : 0;
             const potvrdiliGosti = event.guests ? event.guests.filter(g => g.RSVPStatus === 'Potvrdio').length : 0;
             
-            // imena svih rezervisanih vendora za glavnu karticu
             let rezervisaniVendori = 'Još uvijek nema rezervacija';
             if (event.expenses && event.expenses.length > 0) {
               const ostaliVendori = event.expenses
                 .map(e => e.VendorName || "Nepoznat vendor")
-                .filter(imeVendora => !event.Location.includes(imeVendora)); // Filtrira duplikat!
+                .filter(imeVendora => !event.Location.includes(imeVendora)); 
               
               if (ostaliVendori.length > 0) {
                 rezervisaniVendori = ostaliVendori.join(', ');
@@ -230,7 +258,6 @@ function MyEvents() {
                   <h2>{event.Title}</h2>
                   <span className="event-date">📅 {formatDate(event.Date)}</span>
                   <span className="event-location">📍 {event.Location}</span>
-                  {/*prikay rezervisanih vendora na glavnoj kartici*/}
                   <span className="event-location" style={{ marginTop: '10px', color: '#137333', fontWeight: '600' }}>
                     🏪 Rezervisano: <span style={{ color: '#444', fontWeight: '500' }}>{rezervisaniVendori}</span>
                   </span>
@@ -243,16 +270,7 @@ function MyEvents() {
                     <div className="progress-bar-bg">
                       <div 
                         className="progress-bar-fill pink-fill" 
-                        style={{ 
-                          width: `${Math.min((potroseno / event.TotalBudget) * 100, 100)}%`,
-                          fontSize: '10px', 
-                          color: '#111', 
-                          fontWeight: 'bold', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          minWidth: potroseno > 0 ? '20px' : '0' 
-                        }}
+                        style={{ width: `${Math.min((potroseno / event.TotalBudget) * 100, 100)}%`, fontSize: '10px', color: '#111', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: potroseno > 0 ? '20px' : '0' }}
                       >
                         {event.TotalBudget > 0 ? `${Math.round((potroseno / event.TotalBudget) * 100)}%` : '0%'}
                       </div>
@@ -263,58 +281,29 @@ function MyEvents() {
                     <h4>Zadaci</h4>
                     <p className="stat-numbers">{zavrseniZadaci} <span className="stat-total">/ {ukupnoZadataka}</span></p>
                     <div className="progress-bar-bg">
-                      <div 
-                        className="progress-bar-fill green-fill" 
-                        style={{ 
-                          width: `${ukupnoZadataka > 0 ? (zavrseniZadaci / ukupnoZadataka) * 100 : 0}%`,
-                          fontSize: '10px', 
-                          color: '#111', 
-                          fontWeight: 'bold', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          minWidth: zavrseniZadaci > 0 ? '20px' : '0'
-                        }}
-                      >
+                      <div className="progress-bar-fill green-fill" style={{ width: `${ukupnoZadataka > 0 ? (zavrseniZadaci / ukupnoZadataka) * 100 : 0}%`, fontSize: '10px', color: '#111', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: zavrseniZadaci > 0 ? '20px' : '0' }}>
                         {ukupnoZadataka > 0 ? `${Math.round((zavrseniZadaci / ukupnoZadataka) * 100)}%` : '0%'}
                       </div>
                     </div>
                   </div>
 
-                  {/* za goste*/}
                   <div className="stat-box">
                     <h4>Gosti</h4>
                     <p className="stat-numbers">{potvrdiliGosti} <span className="stat-total">/ {ukupnoGostiju}</span></p>
                     <div className="progress-bar-bg">
-                      <div 
-                        className="progress-bar-fill" 
-                        style={{ 
-                          width: `${ukupnoGostiju > 0 ? (potvrdiliGosti / ukupnoGostiju) * 100 : 0}%`,
-                          background: 'var(--logo-pink)', 
-                          fontSize: '10px', 
-                          color: '#111', 
-                          fontWeight: 'bold', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          minWidth: potvrdiliGosti > 0 ? '20px' : '0'
-                        }}
-                      >
+                      <div className="progress-bar-fill" style={{ width: `${ukupnoGostiju > 0 ? (potvrdiliGosti / ukupnoGostiju) * 100 : 0}%`, background: 'var(--logo-pink)', fontSize: '10px', color: '#111', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: potvrdiliGosti > 0 ? '20px' : '0' }}>
                         {ukupnoGostiju > 0 ? `${Math.round((potvrdiliGosti / ukupnoGostiju) * 100)}%` : '0%'}
                       </div>
                     </div>
                   </div>
                 </div>
-                <button className="details-btn" onClick={() => setSelectedEvent(event)}>
-                  Prikaži detalje
-                </button>
+                <button className="details-btn" onClick={() => setSelectedEvent(event)}>Prikaži detalje</button>
               </div>
             );
           })
         )}
       </div>
 
-      {/* prikaz detalja */}
       {selectedEvent && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" style={{ maxWidth: '1050px', width: '95%', padding: '45px' }} onClick={(e) => e.stopPropagation()}>
@@ -325,46 +314,23 @@ function MyEvents() {
             </h2>
             
             <div className="modal-sections" style={{ gap: '40px' }}>
-              
-              {/* sekcija za zadatke */}
               <div className="modal-section" style={{ minHeight: '350px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
                   <h3>📝 To-Do Lista</h3>
                   <ul style={{ maxHeight: '240px', overflowY: 'auto', marginBottom: '15px', paddingRight: '5px' }}>
                     {selectedEvent.tasks && selectedEvent.tasks.length > 0 ? selectedEvent.tasks.map(task => (
-                      <li 
-                        key={task.Id} 
-                        onClick={() => handleToggleTask(task.Id, task.IsCompleted)}
-                        style={{ 
-                          textDecoration: task.IsCompleted ? 'line-through' : 'none', 
-                          color: task.IsCompleted ? '#777' : '#111',
-                          cursor: 'pointer',
-                          padding: '8px 0',
-                          fontSize: '1rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                      >
+                      <li key={task.Id} onClick={() => handleToggleTask(task.Id, task.IsCompleted)} style={{ textDecoration: task.IsCompleted ? 'line-through' : 'none', color: task.IsCompleted ? '#777' : '#111', cursor: 'pointer', padding: '8px 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '1.2rem' }}>{task.IsCompleted ? '✅' : '⬜'}</span> {task.TaskName}
                       </li>
                     )) : <li>Nema dodatih zadataka.</li>}
                   </ul>
                 </div>
-                
                 <form onSubmit={handleAddTask} style={{ display: 'flex', gap: '5px', width: '100%', marginTop: 'auto' }}>
-                  <input 
-                    type="text" 
-                    placeholder="Novi zadatak..." 
-                    value={inputTaskName}
-                    onChange={(e) => setInputTaskName(e.target.value)}
-                    style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '0.9rem', flex: 1, minWidth: '0', boxSizing: 'border-box' }}
-                  />
+                  <input type="text" placeholder="Novi zadatak..." value={inputTaskName} onChange={(e) => setInputTaskName(e.target.value)} style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '0.9rem', flex: 1, minWidth: '0', boxSizing: 'border-box' }}/>
                   <button type="submit" style={{ padding: '10px 15px', background: 'var(--logo-green)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem' }}>+</button>
                 </form>
               </div>
 
-              {/* sekcija za goste */}
               <div className="modal-section" style={{ minHeight: '350px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
                   <h3>💌 Lista Gostiju</h3>
@@ -372,15 +338,7 @@ function MyEvents() {
                     {selectedEvent.guests && selectedEvent.guests.length > 0 ? selectedEvent.guests.map(guest => (
                       <li key={guest.Id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed rgba(0,0,0,0.05)' }}>
                         <span style={{ fontSize: '1rem', fontWeight: '500' }}>{guest.FirstName} {guest.LastName}</span>
-                        <select 
-                          value={guest.RSVPStatus || 'Na čekanju'} 
-                          onChange={(e) => handleUpdateRSVP(guest.Id, e.target.value)}
-                          style={{ 
-                            padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer',
-                            background: guest.RSVPStatus === 'Potvrdio' ? '#e6f4ea' : guest.RSVPStatus === 'Odbio' ? '#fce8e6' : '#fff',
-                            color: guest.RSVPStatus === 'Potvrdio' ? '#137333' : guest.RSVPStatus === 'Odbio' ? '#c5221f' : '#333',
-                          }}
-                        >
+                        <select value={guest.RSVPStatus || 'Na čekanju'} onChange={(e) => handleUpdateRSVP(guest.Id, e.target.value)} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer', background: guest.RSVPStatus === 'Potvrdio' ? '#e6f4ea' : guest.RSVPStatus === 'Odbio' ? '#fce8e6' : '#fff', color: guest.RSVPStatus === 'Potvrdio' ? '#137333' : guest.RSVPStatus === 'Odbio' ? '#c5221f' : '#333' }}>
                           <option value="Na čekanju">⏳ Čekanje</option>
                           <option value="Potvrdio">✅ Dolazi</option>
                           <option value="Odbio">❌ Ne dolazi</option>
@@ -389,80 +347,67 @@ function MyEvents() {
                     )) : <li>Nema gostiju.</li>}
                   </ul>
                 </div>
-                
                 <form onSubmit={handleAddGuest} style={{ display: 'flex', gap: '8px', flexDirection: 'column', width: '100%', marginTop: 'auto' }}>
                   <div style={{ display: 'flex', gap: '5px', width: '100%' }}>
-                    <input 
-                      type="text" 
-                      placeholder="Ime..." 
-                      value={inputGuestFirst}
-                      onChange={(e) => setInputGuestFirst(e.target.value)}
-                      style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '0.9rem', flex: 1, minWidth: '0', boxSizing: 'border-box' }}
-                    />
-                    <input 
-                      type="text" 
-                      placeholder="Prezime..." 
-                      value={inputGuestLast}
-                      onChange={(e) => setInputGuestLast(e.target.value)}
-                      style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '0.9rem', flex: 1, minWidth: '0', boxSizing: 'border-box' }}
-                    />
+                    <input type="text" placeholder="Ime..." value={inputGuestFirst} onChange={(e) => setInputGuestFirst(e.target.value)} style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '0.9rem', flex: 1, minWidth: '0', boxSizing: 'border-box' }}/>
+                    <input type="text" placeholder="Prezime..." value={inputGuestLast} onChange={(e) => setInputGuestLast(e.target.value)} style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '0.9rem', flex: 1, minWidth: '0', boxSizing: 'border-box' }}/>
                   </div>
                   <button type="submit" style={{ padding: '10px', background: 'var(--logo-green)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>+ Dodaj gosta</button>
                 </form>
               </div>
 
-              {/* sekcija za placanje I VENDORE */}
               <div className="modal-section" style={{ minHeight: '350px' }}>
                 <h3>🏪 Rezervisani Vendori</h3>
                 <ul style={{ maxHeight: '310px', overflowY: 'auto', paddingRight: '5px' }}>
-                  {selectedEvent.expenses && selectedEvent.expenses.length > 0 ? selectedEvent.expenses.map(expense => (
+                  {selectedEvent.expenses && selectedEvent.expenses.length > 0 ? selectedEvent.expenses.map(expense => {
+                    
+                    // ako sadrzi po osobi odnosi se na salu/restoran
+                    const mozeSeMijenjati = expense.ExpenseName.includes('po osobi');
+
+                    return (
                     <li key={expense.Id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px dashed rgba(0,0,0,0.1)' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontWeight: '700', fontSize: '1.05rem', color: '#111' }}>
                           {expense.VendorName || 'Nepoznat vendor'}
                         </span>
-                        <span style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic' }}>
+                        
+                        {/* olovka za izmjenu broja gostiju */}
+                        <span style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {expense.ExpenseName.replace('Angažovanje: ', '')}
+                          {mozeSeMijenjati && (
+                            <button 
+                              onClick={() => handleUpdateGuestsCount(expense, selectedEvent.Id)}
+                              style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }} 
+                              title="Izmijeni konačan broj gostiju"
+                            >
+                              ✏️
+                            </button>
+                          )}
                         </span>
+                        
                         <span style={{ fontSize: '0.95rem', color: '#333', fontWeight: '500' }}>
                           Iznos: {expense.ActualAmount} €
                         </span>
                       </div>
-                      <select 
-                        value={expense.IsPaid ? "1" : "0"} 
-                        onChange={() => handleToggleExpensePaid(expense.Id, expense.IsPaid)}
-                        style={{ 
-                          padding: '5px 10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer',
-                          background: expense.IsPaid ? '#e6f4ea' : '#fce8e6',
-                          color: expense.IsPaid ? '#137333' : '#c5221f',
-                        }}
-                      >
+                      <select value={expense.IsPaid ? "1" : "0"} onChange={() => handleToggleExpensePaid(expense.Id, expense.IsPaid)} style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer', background: expense.IsPaid ? '#e6f4ea' : '#fce8e6', color: expense.IsPaid ? '#137333' : '#c5221f' }}>
                         <option value="1">✅ Plaćeno</option>
                         <option value="0">❌ Nije plaćeno</option>
                       </select>
                     </li>
-                  )) : <li>Još uvijek nema rezervisanih vendora. Opcija zakazivanja se nalazi na Dashboardu!</li>}
+                  )}) : <li>Još uvijek nema rezervisanih vendora. Opcija zakazivanja se nalazi na Dashboardu!</li>}
                 </ul>
               </div>
-
             </div>
 
-            {/* dugme za zavrsetak izmjene */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '35px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '20px' }}>
-              <button 
-                className="create-event-btn" 
-                style={{ background: 'var(--logo-pink)', color: '#111', padding: '14px 45px', fontSize: '1.05rem', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
-                onClick={() => setSelectedEvent(null)}
-              >
+              <button className="create-event-btn" style={{ background: 'var(--logo-pink)', color: '#111', padding: '14px 45px', fontSize: '1.05rem', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }} onClick={() => setSelectedEvent(null)}>
                 ✔ Završi pregled i sačuvaj
               </button>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* za kreiranje dogadjaja*/}
       {isCreateModalOpen && (
         <div className="modal-overlay" onClick={() => setIsCreateModalOpen(false)}>
           <div className="modal-content" style={{maxWidth: '500px'}} onClick={(e) => e.stopPropagation()}>
@@ -483,13 +428,6 @@ function MyEvents() {
               <div className="form-group">
                 <label>Datum i vrijeme</label>
                 <input type="datetime-local" required value={newEvent.date} onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}/>
-              </div>
-              <div className="form-group">
-                <label>Lokacija</label>
-                <input list="venues-list" placeholder="Klikni za odabir sale..." required value={newEvent.location} onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}/>
-                <datalist id="venues-list">
-                  {venues.map(venue => <option key={venue.Id} value={venue.Name} />)}
-                </datalist>
               </div>
               <div className="form-group">
                 <label>Ukupan budžet (€)</label>
