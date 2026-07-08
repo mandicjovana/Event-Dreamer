@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/'); // gdje ćemo da čuvamo slike
     },
     filename: (req, file, cb) => {
-        // Dodavanje trenutnog vremena ispred fajla
+        // Dodavanje trenutnog imena ispred fajla
         cb(null, Date.now() + path.extname(file.originalname)); 
     }
 });
@@ -73,7 +73,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Za prijavu korisnika (ISPRAVLJENO)
+// Za prijavu korisnika 
 app.post('/api/login', (req, res) => {
     const { Email, Password } = req.body;
 
@@ -93,7 +93,7 @@ app.post('/api/login', (req, res) => {
 
             if (!validPassword) return res.status(400).json({ poruka: 'Pogrešan email ili lozinka!' });
 
-            // Hvatamo rolu
+            // je li user ili admin
             const userRole = user.RoleId || user.RoleID || 2;
 
             const token = jwt.sign(
@@ -110,7 +110,7 @@ app.post('/api/login', (req, res) => {
                     ime: user.FirstName,
                     prezime: user.LastName,
                     email: user.Email,
-                    roleId: userRole // Malo 'r' za React!
+                    roleId: userRole // Malo r za React
                 }
             });
         } catch (error) {
@@ -153,7 +153,7 @@ app.get('/api/vendors', verifyToken, (req, res) => {
     });
 });
 
-// Uploudovanje slike vendora, što može samo admin
+// Uploudovanje slika vendora, što može samo admin
 app.post('/api/upload', verifyToken, isAdmin, upload.single('slika'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ greska: 'Niste odabrali fajl za upload!' });
@@ -178,7 +178,15 @@ app.get('/api/my-events', verifyToken, async (req, res) => {
         const dogadjajiSaDetaljima = await Promise.all(events.map(async (event) => {
             const eventId = event.Id;
             const [tasks] = await db.promise().query('SELECT * FROM Tasks WHERE EventID = ?', [eventId]);
-            const [guests] = await db.promise().query('SELECT * FROM Guests WHERE EventId = ?', [eventId]);
+            
+            // gosti i ishrana
+            const [guests] = await db.promise().query(`
+                SELECT Guests.*, DietaryRequirements.RequirementType 
+                FROM Guests 
+                LEFT JOIN DietaryRequirements ON Guests.Id = DietaryRequirements.GuestID 
+                WHERE Guests.EventId = ?
+            `, [eventId]);
+
             const [expenses] = await db.promise().query(`
                 SELECT Expenses.*, Vendors.Name AS VendorName 
                 FROM Expenses 
@@ -327,6 +335,7 @@ app.post('/api/book-vendor', verifyToken, async (req, res) => {
         res.status(500).json({ greska: 'Greška na serveru pri zakazivanju.' });
     }
 });
+
 // ruta za tipove dogadjaja za opadajuci meni
 app.get('/api/event-types', async (req, res) => {
     try {
@@ -351,19 +360,6 @@ app.put('/api/tasks/:id/toggle', verifyToken, async (req, res) => {
     }
 });
 
-// ruta za provjeru za goste
-app.put('/api/guests/:id/rsvp', verifyToken, async (req, res) => {
-    const guestId = req.params.id;
-    const { rsvpStatus } = req.body; 
-
-    try {
-        await db.promise().query('UPDATE Guests SET RSVPStatus = ? WHERE Id = ?', [rsvpStatus, guestId]);
-        res.json({ poruka: 'Status gosta uspješno ažuriran!' });
-    } catch (error) {
-        res.status(500).json({ greska: 'Greška na serveru pri ažuriranju statusa.' });
-    }
-});
-
 // ruta za dodavanje novog zadatka u odredjeni dogadjaj
 app.post('/api/tasks', verifyToken, async (req, res) => {
     const { eventId, taskName } = req.body;
@@ -380,19 +376,72 @@ app.post('/api/tasks', verifyToken, async (req, res) => {
     }
 });
 
-// ruta za dodavanje novog gosta u odredjeni dogadjaj
+// =========================================================================
+// RUTA ZA DODAVANJE GOSTA (POST)
+// =========================================================================
 app.post('/api/guests', verifyToken, async (req, res) => {
-    const { eventId, firstName, lastName } = req.body;
+    const { eventId, firstName, lastName, tableNumber, dietaryRequirement, rsvpStatus } = req.body;
 
     if (!eventId || !firstName || !lastName) {
-        return res.status(400).json({ poruka: 'Sva polja su obavezna.' });
+        return res.status(400).json({ poruka: 'Ime, prezime i događaj su obavezni.' });
     }
 
     try {
-        await db.promise().query('INSERT INTO Guests (EventId, FirstName, LastName, RSVPStatus) VALUES (?, ?, ?, "Na čekanju")', [eventId, firstName, lastName]);
+        const brojStola = tableNumber ? parseInt(tableNumber, 10) : null;
+        const status = rsvpStatus || 'Na čekanju';
+
+        const [guestResult] = await db.promise().query(
+            `INSERT INTO Guests (EventId, FirstName, LastName, TableNumber, RSVPStatus) VALUES (?, ?, ?, ?, ?)`,
+            [eventId, firstName, lastName, brojStola, status]
+        );
+
+        const newGuestId = guestResult.insertId;
+
+        if (dietaryRequirement && dietaryRequirement !== 'Nema') {
+            await db.promise().query(
+                `INSERT INTO DietaryRequirements (GuestID, RequirementType) VALUES (?, ?)`,
+                [newGuestId, dietaryRequirement]
+            );
+        }
+
         res.status(201).json({ poruka: 'Gost uspješno dodat!' });
     } catch (error) {
+        console.error('Greška pri dodavanju gosta:', error);
         res.status(500).json({ greska: 'Greška na serveru pri dodavanju gosta.' });
+    }
+});
+
+// =========================================================================
+// RUTA ZA AŽURIRANJE GOSTA (PUT) - STATUS, STO I ISHRANA
+// =========================================================================
+app.put('/api/guests/:id/update', verifyToken, async (req, res) => {
+    const guestId = req.params.id;
+    const { rsvpStatus, tableNumber, dietaryRequirement } = req.body;
+
+    try {
+        const brojStola = (tableNumber && rsvpStatus === 'Potvrdio') ? parseInt(tableNumber, 10) : null;
+
+        // 1. Ažuriramo osnovne podatke o gostu
+        await db.promise().query(
+            'UPDATE Guests SET RSVPStatus = ?, TableNumber = ? WHERE Id = ?', 
+            [rsvpStatus, brojStola, guestId]
+        );
+
+        // 2. Brišemo staru ishranu za ovog gosta (čistimo bazu)
+        await db.promise().query('DELETE FROM DietaryRequirements WHERE GuestID = ?', [guestId]);
+
+        // 3. Ako je potvrdio i ima posebnu ishranu, upisujemo je ponovo
+        if (rsvpStatus === 'Potvrdio' && dietaryRequirement && dietaryRequirement !== 'Nema') {
+            await db.promise().query(
+                'INSERT INTO DietaryRequirements (GuestID, RequirementType) VALUES (?, ?)',
+                [guestId, dietaryRequirement]
+            );
+        }
+
+        res.json({ poruka: 'Podaci gosta uspješno ažurirani!' });
+    } catch (error) {
+        console.error('Greška pri ažuriranju gosta:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri ažuriranju.' });
     }
 });
 
@@ -409,7 +458,33 @@ app.put('/api/expenses/:id/paid', verifyToken, async (req, res) => {
         res.status(500).json({ greska: 'Greška na serveru pri ažuriranju plaćanja.' });
     }
 });
+// =========================================================================
+// RUTA ZA BRISANJE DOGAĐAJA (I SVIH NJEGOVIH PODATAKA)
+// =========================================================================
+app.delete('/api/events/:id', verifyToken, async (req, res) => {
+    const eventId = req.params.id;
+    const userId = req.user.id;
 
+    try {
+        // 1. Provjeravamo da li ovaj događaj pripada ulogovanom korisniku
+        const [event] = await db.promise().query('SELECT * FROM Events WHERE Id = ? AND UserID = ?', [eventId, userId]);
+        if (event.length === 0) {
+            return res.status(403).json({ poruka: 'Nemate pravo da obrišete ovaj događaj ili on ne postoji.' });
+        }
+
+        // 2. Brisanje ide strogo ovim redoslijedom zbog baze:
+        await db.promise().query('DELETE FROM Expenses WHERE EventID = ?', [eventId]); // Brišemo troškove
+        await db.promise().query('DELETE FROM Tasks WHERE EventID = ?', [eventId]); // Brišemo zadatke
+        await db.promise().query('DELETE FROM DietaryRequirements WHERE GuestID IN (SELECT Id FROM Guests WHERE EventId = ?)', [eventId]); // Brišemo ishranu
+        await db.promise().query('DELETE FROM Guests WHERE EventId = ?', [eventId]); // Brišemo goste
+        await db.promise().query('DELETE FROM Events WHERE Id = ?', [eventId]); // Na kraju brišemo događaj
+
+        res.status(200).json({ poruka: 'Događaj je uspješno obrisan!' });
+    } catch (error) {
+        console.error('Greška pri brisanju događaja:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri brisanju događaja.' });
+    }
+});
 // ruta za statistiku u admin panelu
 app.get('/api/admin/stats', verifyToken, async (req, res) => {
     if (!req.user || req.user.roleId !== 1) {
@@ -431,6 +506,7 @@ app.get('/api/admin/stats', verifyToken, async (req, res) => {
         res.status(500).json({ greska: 'Greška na serveru pri dobavljanju statistike za admina.' });
     }
 });
+
 // ruta za sve korisnike za admin panel
 app.get('/api/admin/users', verifyToken, async (req, res) => {
     if (!req.user || req.user.roleId !== 1) {
@@ -468,6 +544,7 @@ app.get('/api/admin/events', verifyToken, async (req, res) => {
         res.status(500).json({ greska: 'Greška na serveru pri dobavljanju događaja.' });
     }
 });
+
 //ruta za mijenjanje broja gostiju i izracunavanje cijene
 app.put('/api/expenses/:id/update-guests', verifyToken, async (req, res) => {
     const expenseId = req.params.id;
@@ -494,7 +571,7 @@ app.put('/api/expenses/:id/update-guests', verifyToken, async (req, res) => {
         if (totalSpentOther + Number(newAmount) > totalBudget) {
             const preostalo = totalBudget - totalSpentOther;
             return res.status(400).json({
-                poruka: `❌ Nemate dovoljno budžeta za ovaj novi broj gostiju! Preostali budžet za ostale usluge je ${preostalo} €, a nova cijena sale iznosi ${newAmount} €.`
+                poruka: `Nemate dovoljno budžeta za ovaj novi broj gostiju! Preostali budžet za ostale usluge je ${preostalo} €, a nova cijena sale iznosi ${newAmount} €.`
             });
         }
 
@@ -510,6 +587,41 @@ app.put('/api/expenses/:id/update-guests', verifyToken, async (req, res) => {
         res.status(500).json({ poruka: 'Greška na serveru.' });
     }
 });
+// =========================================================================
+// RUTA ZA BRISANJE KORISNIKA (I SVIH NJEGOVIH PODATAKA)
+// =========================================================================
+app.delete('/api/admin/users/:id', verifyToken, isAdmin, async (req, res) => {
+    const userIdToDelete = req.params.id;
+
+    try {
+        // 1. Provjera da li slučajno pokušavamo da obrišemo administratora
+        const [userRows] = await db.promise().query('SELECT RoleId FROM Users WHERE Id = ?', [userIdToDelete]);
+        if (userRows.length === 0) return res.status(404).json({ poruka: 'Korisnik nije pronađen.' });
+        if (userRows[0].RoleId === 1) return res.status(403).json({ poruka: 'Nije dozvoljeno brisanje administratora!' });
+
+        // 2. Pronalazimo sve događaje ovog korisnika
+        const [userEvents] = await db.promise().query('SELECT Id FROM Events WHERE UserID = ?', [userIdToDelete]);
+        
+        // 3. Pošteno čistimo sve podatke vezane za njegove događaje kako baza ne bi prijavila Foreign Key grešku
+        for (let i = 0; i < userEvents.length; i++) {
+            const evId = userEvents[i].Id;
+            await db.promise().query('DELETE FROM Expenses WHERE EventID = ?', [evId]);
+            await db.promise().query('DELETE FROM Tasks WHERE EventID = ?', [evId]);
+            await db.promise().query('DELETE FROM DietaryRequirements WHERE GuestID IN (SELECT Id FROM Guests WHERE EventId = ?)', [evId]);
+            await db.promise().query('DELETE FROM Guests WHERE EventId = ?', [evId]);
+            await db.promise().query('DELETE FROM Events WHERE Id = ?', [evId]);
+        }
+
+        // 4. Na kraju, kada su svi "repovi" počišćeni, brišemo korisnika
+        await db.promise().query('DELETE FROM Users WHERE Id = ?', [userIdToDelete]);
+
+        res.status(200).json({ poruka: 'Korisnik i svi njegovi podaci su uspješno obrisani!' });
+    } catch (error) {
+        console.error('Greška pri brisanju korisnika:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri brisanju korisnika.' });
+    }
+});
+
 // ruta za brisanje vendora iz baze podataka
 app.delete('/api/admin/vendors/:id', verifyToken, (req, res) => {
     // ručna provera role 
@@ -559,6 +671,7 @@ app.put('/api/admin/vendors/:id', verifyToken, (req, res) => {
         res.status(200).json({ poruka: 'Podaci o vendoru su uspješno ažurirani!' });
     });
 });
+
 // ruta koja vraća sve zauzete datume za odredjenog vendora
 app.get('/api/vendors/:id/busy-dates', verifyToken, async (req, res) => {
     const { id } = req.params;
@@ -578,6 +691,7 @@ app.get('/api/vendors/:id/busy-dates', verifyToken, async (req, res) => {
         res.status(500).json({ greska: 'Greška pri dohvatanju zauzetih termina.' });
     }
 });
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server je pokrenut na http://localhost:${PORT}`);

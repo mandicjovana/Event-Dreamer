@@ -57,6 +57,34 @@ function Admin() {
     fetchAllAdminData();
   }, [navigate]);
 
+  // =========================================================================
+  // NOVO: Funkcija za brisanje korisnika (sa svim njegovim događajima)
+  // =========================================================================
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Da li ste sigurni da želite obrisati ovog korisnika? Oprez: Svi njegovi događaji, gosti i troškovi će takođe biti trajno izbrisani!')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      alert('Korisnik i svi njegovi podaci su uspješno obrisani!');
+      setUsersList(usersList.filter(user => user.Id !== userId));
+      setStats(prev => ({ ...prev, ukupnoKorisnika: prev.ukupnoKorisnika - 1 }));
+      
+      // Osvježavamo događaje jer su obrisani i korisnikovi događaji
+      fetchAllAdminData(); 
+    } catch (error) {
+      console.error('Greška pri brisanju korisnika:', error);
+      if(error.response?.data?.poruka) {
+        alert(error.response.data.poruka);
+      } else {
+        alert('Došlo je do greške pri brisanju korisnika.');
+      }
+    }
+  };
+
   const handleEditClick = (vendor) => {
     setEditRowId(vendor.Id);
     setEditFormData({
@@ -196,7 +224,10 @@ function Admin() {
   if (loading) {
     return (
       <div className="dashboard-container admin-loading">
-        <h2 className="admin-loading-title">Učitavanje admin panela... ⚙️</h2>
+        <h2 className="admin-loading-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin"><circle cx="12" cy="12" r="10"></circle><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M4.93 4.93l2.83 2.83"></path><path d="M16.24 16.24l2.83 2.83"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M4.93 19.07l2.83-2.83"></path><path d="M16.24 7.76l2.83-2.83"></path></svg>
+          Učitavanje admin panela...
+        </h2>
       </div>
     );
   }
@@ -219,10 +250,22 @@ function Admin() {
       </div>
 
       <div className="category-tabs admin-tabs-container">
-        <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'stats' })}>📊 Statistika</button>
-        <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'users' })}>👥 Svi korisnici</button>
-        <button className={`tab-btn ${activeTab === 'events' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'events' })}>🎉 Svi događaji</button>
-        <button className={`tab-btn ${activeTab === 'vendors' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 'Sve' })}>🏪 Vendori</button>
+        <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'stats' })}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '6px', verticalAlign: 'middle'}}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          Statistika
+        </button>
+        <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'users' })}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '6px', verticalAlign: 'middle'}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Svi korisnici
+        </button>
+        <button className={`tab-btn ${activeTab === 'events' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'events' })}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '6px', verticalAlign: 'middle'}}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          Svi događaji
+        </button>
+        <button className={`tab-btn ${activeTab === 'vendors' ? 'active' : ''}`} onClick={() => setSearchParams({ tab: 'vendors', category: 'Sve' })}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '6px', verticalAlign: 'middle'}}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          Vendori
+        </button>
       </div>
 
       {activeTab === 'stats' && (
@@ -269,7 +312,7 @@ function Admin() {
               <p className="admin-vendor-number">{countVendors(4)}</p>
             </div>
             <div className="admin-vendor-card" onClick={() => setSearchParams({ tab: 'vendors', category: 5 })}>
-              <div className="admin-vendor-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"></path><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4-2 2-1 2-1"></path><path d="M2 21h20"></path><path d="M7 8v2"></path><path d="M12 8v2"></path><path d="M17 8v2"></path><path d="M7 4h.01"></path><path d="M12 4h.01"></path><path d="M17 4h.01"></path></svg></div>
+              <div className="admin-vendor-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"></path><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2-1 2-1"></path><path d="M2 21h20"></path><path d="M7 8v2"></path><path d="M12 8v2"></path><path d="M17 8v2"></path><path d="M7 4h.01"></path><path d="M12 4h.01"></path><path d="M17 4h.01"></path></svg></div>
               <h4 className="admin-vendor-label">Torte</h4>
               <p className="admin-vendor-number">{countVendors(5)}</p>
             </div>
@@ -289,6 +332,7 @@ function Admin() {
                   <th>Ime i prezime</th>
                   <th>Email adresa</th>
                   <th>Uloga u sistemu</th>
+                  <th>Akcije</th>
                 </tr>
               </thead>
               <tbody>
@@ -315,9 +359,22 @@ function Admin() {
                         </span>
                       )}
                     </td>
+                    <td data-label="Akcije" className="td-actions">
+                      {user.RoleId !== 1 && (
+                        <button 
+                          className="logout-btn btn-delete-action" 
+                          onClick={() => handleDeleteUser(user.Id)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                          title="Obriši korisnika i njegove događaje"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                          Obriši
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan="4" className="td-first empty-table-row">Nema registrovanih korisnika.</td></tr>
+                  <tr><td colSpan="5" className="td-first empty-table-row">Nema registrovanih korisnika.</td></tr>
                 )}
               </tbody>
             </table>
@@ -345,9 +402,15 @@ function Admin() {
                   <tr key={ev.Id}>
                     <td data-label="Naziv događaja" className="td-bold-dark">{ev.Title}</td>
                     <td data-label="Datum" className="td-date">
-                      <span className="badge-date">📅 {formatDate(ev.Date)}</span>
+                      <span className="badge-date">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '4px', verticalAlign: 'middle'}}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        {formatDate(ev.Date)}
+                      </span>
                     </td>
-                    <td data-label="Lokacija" className="td-gray">📍 {ev.Location}</td>
+                    <td data-label="Lokacija" className="td-gray">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '4px', verticalAlign: 'middle'}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                      {ev.Location}
+                    </td>
                     <td data-label="Budžet">
                       <span className="badge-budget">{ev.TotalBudget} €</span>
                     </td>
@@ -486,12 +549,22 @@ function Admin() {
                         <td data-label="Akcije" className="td-actions">
                           <div className="action-buttons-col">
                             <div className="action-buttons-row">
-                              <button onClick={() => handleSaveInline(vendor.Id)} className="logout-btn btn-save-inline">✔ Sačuvaj</button>
-                              <button onClick={cancelEdit} className="logout-btn btn-cancel-inline">✖ Odustani</button>
+                              <button onClick={() => handleSaveInline(vendor.Id)} className="logout-btn btn-save-inline" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Sačuvaj
+                              </button>
+                              <button onClick={cancelEdit} className="logout-btn btn-cancel-inline" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                Odustani
+                              </button>
                             </div>
-                            <label className="inline-image-label">
+                            <label className="inline-image-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                                <input type="file" style={{display: 'none'}} accept="image/*" onChange={(e) => setEditFile(e.target.files[0])}/>
-                               {editFile ? '🖼️ Slika uspješno dodata' : '📸 Promijeni sliku vendora'}
+                               {editFile ? (
+                                 <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#137333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Slika dodata</>
+                               ) : (
+                                 <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> Promijeni sliku</>
+                               )}
                             </label>
                           </div>
                         </td>
@@ -512,11 +585,13 @@ function Admin() {
                       </td>
                       <td data-label="Akcije" className="td-actions">
                         <div className="action-buttons-row">
-                          <button className="logout-btn btn-edit-action" onClick={() => handleEditClick(vendor)}>
-                            📝 Izmijeni
+                          <button className="logout-btn btn-edit-action" onClick={() => handleEditClick(vendor)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            Izmijeni
                           </button>
-                          <button className="logout-btn btn-delete-action" onClick={() => handleDeleteVendor(vendor.Id)}>
-                            🗑️ Obriši
+                          <button className="logout-btn btn-delete-action" onClick={() => handleDeleteVendor(vendor.Id)} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            Obriši
                           </button>
                         </div>
                       </td>
