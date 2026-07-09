@@ -37,7 +37,7 @@ function Dashboard() {
 
     const roleId = localStorage.getItem('roleId');
     if (Number(roleId) === 1) {
-      window.alert('❌ Pristup odbijen! Administratori nemaju pristup korisničkim stranicama.');
+      window.alert(' Pristup odbijen! Administratori nemaju pristup korisničkim stranicama.');
       navigate('/admin'); 
       return; 
     }
@@ -85,7 +85,7 @@ function Dashboard() {
   const handleConfirmBooking = async () => {
     const token = localStorage.getItem('token');
     if (!chosenEventId) {
-      alert('Molimo te izaberi događaj.');
+      alert('Molimo izaberite događaj.');
       return;
     }
 
@@ -107,7 +107,7 @@ function Dashboard() {
         nazivPaketa = "Rođendanski paket (Standard)";
       } else if (odabraniPaket === 'poslovni') {
         cijenaPoOsobi = Math.max(10, konacnaCijena - 15); 
-        nazivPaketa = "Korporativni paket";
+        nazivPaketa = "Poslovni paket";
       }
 
       konacnaCijena = cijenaPoOsobi * Number(brojGostiju);
@@ -192,7 +192,6 @@ function Dashboard() {
     for (let i = 1; i <= brojDanaUMjesecu; i++) {
       const danFormatiran = i < 10 ? `0${i}` : i;
       const mjesecFormatiran = (mjesec + 1) < 10 ? `0${mjesec + 1}` : mjesec + 1;
-      const proveraDatuma = `${godina}-${mMonth}-${dDan}`; // Note: minor format fix below
       const formatiranDatumZaBazu = `${godina}-${mjesecFormatiran}-${danFormatiran}`;
       
       const ovajDan = new Date(godina, mjesec, i);
@@ -271,12 +270,12 @@ function Dashboard() {
             return (
               <div key={vId} className="vendor-card">
                 <div className="vendor-image-container">
-                  <input type="file" id="file-upload" accept="image/*" onChange={(e) => setSlika(e.target.files[0])} required />
-                      <label htmlFor="file-upload" className="file-upload-label">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                        {slika ? slika.name : 'Kliknite da izaberete sliku sa uređaja'}
-                      </label>
-                  {vendor?.ImagePath ? <img src={`http://localhost:5000/uploads/${vendor.ImagePath}`} alt={vendor.Name} className="vendor-image" /> : <div className="placeholder-image">Nema slike</div>}
+                    {vendor?.ImagePath ? (
+                      <img src={`http://localhost:5000/uploads/${vendor.ImagePath}`} alt={vendor.Name} className="vendor-image" />
+                    ) : (<div className="placeholder-image">
+                      Nema slike
+                      </div>
+                    )}
                 </div>
                 <div className="vendor-info">
                   <h3>{vendor?.Name}</h3>
@@ -293,11 +292,11 @@ function Dashboard() {
         ) : <p className="no-vendors-text">Nema dostupnih vendora koji odgovaraju pretrazi.</p>}
       </div>
 
-      {/* MODAL ZA ZAKAZIVANJE */}
+      {/* modal za zakazivanje*/}
       {selectedVendor && (
         <div className="modal-overlay" onClick={() => setSelectedVendor(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-modal-btn" onClick={() => setSelectedVendor(null)}>✖</button>
+            <button className="close-modal-btn" onClick={() => setSelectedVendor(null)}><b>X</b></button>
             
             <h2 className="modal-header-title">Zakaži: {selectedVendor?.Name}</h2>
             <p className="modal-service-price">
@@ -313,9 +312,9 @@ function Dashboard() {
                   onChange={(e) => setOdabraniPaket(e.target.value)}
                   className="modern-select"
                 >
-                  <option value="premium">💍 Svadbeni paket (Premium) - {selectedVendor?.BasePrice} € / osobi</option>
-                  <option value="standard">🎂 Rođendanski paket (Standard) - {Math.max(15, Number(selectedVendor?.BasePrice) - 10)} € / osobi</option>
-                  <option value="poslovni">💼 Poslovni paket - {Math.max(10, Number(selectedVendor?.BasePrice) - 15)} € / osobi</option>
+                  <option value="premium"> Svadbeni paket (Premium) - {selectedVendor?.BasePrice} € / osobi</option>
+                  <option value="standard"> Rođendanski paket (Standard) - {Math.max(15, Number(selectedVendor?.BasePrice) - 10)} € / osobi</option>
+                  <option value="poslovni"> Poslovni paket - {Math.max(10, Number(selectedVendor?.BasePrice) - 15)} € / osobi</option>
                 </select>
 
                 <label className="modal-label" style={{marginTop: '15px'}}>Unesite procijenjen broj gostiju:</label>

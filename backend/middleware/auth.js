@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-// 1. Provjera da li korisnik uopšte ima token (da li je ulogovan)
+// Provjera da li korisnik uopšte ima token (da li je ulogovan)
 const verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -19,12 +19,12 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-// 2. Provjera da li je ulogovani korisnik ADMIN (RoleID mora biti 1)
+// Provjera da li je ulogovani korisnik admin
 const isAdmin = (req, res, next) => {
     if (req.user.roleId !== 1) {
         return res.status(403).json({ poruka: 'Pristup odbijen. Akcija dozvoljena samo administratorima.' });
     }
-    next(); // Korisnik je admin, puštamo ga dalje
+    next(); 
 };
 
 module.exports = { verifyToken, isAdmin };

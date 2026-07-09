@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/'); // gdje ćemo da čuvamo slike
     },
     filename: (req, file, cb) => {
-        // Dodavanje trenutnog imena ispred fajla
+        // Dodavanje trenutnog datuma ispred fajla
         cb(null, Date.now() + path.extname(file.originalname)); 
     }
 });
@@ -42,10 +42,6 @@ db.connect((err) => {
         return;
     }
     console.log('Uspješno povezano sa MySQL bazom!');
-});
-
-app.get('/', (req, res) => {
-    res.send('EventDreamer API radi!');
 });
 
 // Za registraciju korisnika
@@ -110,7 +106,7 @@ app.post('/api/login', (req, res) => {
                     ime: user.FirstName,
                     prezime: user.LastName,
                     email: user.Email,
-                    roleId: userRole // Malo r za React
+                    roleId: userRole 
                 }
             });
         } catch (error) {
@@ -163,7 +159,28 @@ app.post('/api/upload', verifyToken, isAdmin, upload.single('slika'), (req, res)
         ImagePath: req.file.filename 
     });
 });
+//za kreiranje dogadjaja
+app.post('/api/events', verifyToken, async (req, res) => {
+    const { eventTypeId, title, date, totalBudget } = req.body;
+    const userId = req.user.id; 
 
+    if (!eventTypeId || !title || !date || !totalBudget) {
+        return res.status(400).json({ poruka: 'Naslov, datum, tip i budžet su obavezni!' });
+    }
+
+    try {
+        const query = `
+            INSERT INTO Events (UserID, EventTypesId, Title, Date, Location, TotalBudget) 
+            VALUES (?, ?, ?, ?, 'Lokacija na čekanju', ?)
+        `;
+        await db.promise().query(query, [userId, eventTypeId, title, date, totalBudget]);
+        
+        res.status(201).json({ poruka: 'Događaj je uspješno kreiran!' });
+    } catch (error) {
+        console.error('Greška pri kreiranju događaja:', error);
+        res.status(500).json({ greska: 'Greška na serveru pri kreiranju događaja.' });
+    }
+});
 // Za sve dogadjaje i detalje vezane za ulogovanog korisnika
 app.get('/api/my-events', verifyToken, async (req, res) => {
     const userId = req.user.id; 
@@ -179,7 +196,6 @@ app.get('/api/my-events', verifyToken, async (req, res) => {
             const eventId = event.Id;
             const [tasks] = await db.promise().query('SELECT * FROM Tasks WHERE EventID = ?', [eventId]);
             
-            // gosti i ishrana
             const [guests] = await db.promise().query(`
                 SELECT Guests.*, DietaryRequirements.RequirementType 
                 FROM Guests 
@@ -209,34 +225,7 @@ app.get('/api/my-events', verifyToken, async (req, res) => {
     }
 });
 
-// =========================================================================
-// 1. RUTA ZA KREIRANJE DOGAĐAJA (LOKACIJA VIŠE NIJE OBAVEZNA)
-// =========================================================================
-app.post('/api/events', verifyToken, async (req, res) => {
-    // Uklonili smo 'location' iz body-ja i provjere
-    const { eventTypeId, title, date, totalBudget } = req.body;
-    const userId = req.user.id; 
-
-    if (!eventTypeId || !title || !date || !totalBudget) {
-        return res.status(400).json({ poruka: 'Naslov, datum, tip i budžet su obavezni!' });
-    }
-
-    try {
-        // Sistem automatski stavlja 'Na čekanju' za lokaciju
-        const query = `
-            INSERT INTO Events (UserID, EventTypesId, Title, Date, Location, TotalBudget) 
-            VALUES (?, ?, ?, ?, 'Lokacija na čekanju', ?)
-        `;
-        await db.promise().query(query, [userId, eventTypeId, title, date, totalBudget]);
-        
-        res.status(201).json({ poruka: 'Događaj je uspješno kreiran!' });
-    } catch (error) {
-        console.error('Greška pri kreiranju događaja:', error);
-        res.status(500).json({ greska: 'Greška na serveru pri kreiranju događaja.' });
-    }
-});
-
-// ruta za zakazivanje vendora sa ZAŠTITOM BUDŽETA, LOKACIJOM I POMJERANJEM DATUMA
+// ruta za zakazivanje vendora
 app.post('/api/book-vendor', verifyToken, async (req, res) => {
     const { eventId, vendorId, expenseName, amount, categoryId, newDate } = req.body;
 
@@ -245,9 +234,7 @@ app.post('/api/book-vendor', verifyToken, async (req, res) => {
     }
 
     try {
-        // =========================================================================
-        // 1. PROVJERA BUDŽETA! Da li korisnik ima dovoljno novca za ovo?
-        // =========================================================================
+        // provjera totalnog budzeta, da li korisnik ima dovoljno novca
         const [eventData] = await db.promise().query('SELECT TotalBudget FROM Events WHERE Id = ?', [eventId]);
         if (eventData.length === 0) return res.status(404).json({ poruka: 'Događaj nije pronađen.' });
         const totalBudget = Number(eventData[0].TotalBudget);
@@ -258,13 +245,11 @@ app.post('/api/book-vendor', verifyToken, async (req, res) => {
         if (totalSpent + Number(amount) > totalBudget) {
             const preostalo = totalBudget - totalSpent;
             return res.status(400).json({ 
-                poruka: `❌ Nemate dovoljno budžeta za ovu rezervaciju! Preostalo Vam je još ${preostalo} €, a iznos ove usluge je ${amount} €.` 
+                poruka: ` Nemate dovoljno budžeta za ovu rezervaciju! Preostalo Vam je još ${preostalo} €, a iznos ove usluge je ${amount} €.` 
             });
         }
 
-        // =========================================================================
-        // 2. Provjera za Salu (Da ne bi bilo dvije sale za isti događaj)
-        // =========================================================================
+        // da nebismo mogli da dodamo za isti dogadjaj vise sala
         if (Number(categoryId) === 1) {
             const venueCheckQuery = `
                 SELECT Expenses.Id 
@@ -276,21 +261,17 @@ app.post('/api/book-vendor', verifyToken, async (req, res) => {
             
             if (existingVenue.length > 0) {
                 return res.status(400).json({ 
-                    poruka: '❌ Ovaj događaj već ima rezervisanu salu/restoran! Nije moguće dodati više od jedne sale.' 
+                    poruka: 'Ovaj događaj već ima rezervisanu salu/restoran! Nije moguće dodati više od jedne sale.' 
                 });
             }
         }
 
-        // =========================================================================
-        // 3. POMJERANJE DATUMA DOGAĐAJA (Ako je kliknuo na kalendar)
-        // =========================================================================
+        // pomjeranje datuma dogadjaja ako na kalendar klikne da se promijeni
         if (newDate) {
             await db.promise().query('UPDATE Events SET Date = ? WHERE Id = ?', [newDate, eventId]);
         }
 
-        // =========================================================================
-        // 4. Provjera da li je OVAJ VENDOR već zauzet tog datuma
-        // =========================================================================
+        // je li vendor zauzet tog datuma
         const [eventRes] = await db.promise().query(
             'SELECT DATE_FORMAT(Date, "%Y-%m-%d") as CleanDate FROM Events WHERE Id = ?', 
             [eventId]
@@ -308,13 +289,11 @@ app.post('/api/book-vendor', verifyToken, async (req, res) => {
 
         if (existingBookings.length > 0) {
             return res.status(409).json({ 
-                poruka: `❌ Žao nam je, ovaj vendor je već rezervisan za taj datum.` 
+                poruka: `Žao nam je, ovaj vendor je već rezervisan za taj datum.` 
             });
         }
 
-        // =========================================================================
-        // 5. UPISUJEMO REZERVACIJU U BAZU I AŽURIRAMO LOKACIJU
-        // =========================================================================
+        // upis rezervacije u bazu i postavljanje lokacije
         const insertQuery = `
             INSERT INTO Expenses (EventID, VendorId, ExpenseName, PlannedAmount, ActualAmount, IsPaid)
             VALUES (?, ?, ?, ?, ?, 0)
@@ -329,7 +308,7 @@ app.post('/api/book-vendor', verifyToken, async (req, res) => {
             }
         }
         
-        res.status(201).json({ poruka: '🎉 Uspješno ste rezervisali vendora!' });
+        res.status(201).json({ poruka: 'Uspješno ste rezervisali vendora!' });
     } catch (error) {
         console.error('Greška pri zakazivanju vendora:', error);
         res.status(500).json({ greska: 'Greška na serveru pri zakazivanju.' });
@@ -376,9 +355,7 @@ app.post('/api/tasks', verifyToken, async (req, res) => {
     }
 });
 
-// =========================================================================
-// RUTA ZA DODAVANJE GOSTA (POST)
-// =========================================================================
+// ruta za dodavanje novog gosta u odredjeni dogadjaj
 app.post('/api/guests', verifyToken, async (req, res) => {
     const { eventId, firstName, lastName, tableNumber, dietaryRequirement, rsvpStatus } = req.body;
 
@@ -411,9 +388,7 @@ app.post('/api/guests', verifyToken, async (req, res) => {
     }
 });
 
-// =========================================================================
-// RUTA ZA AŽURIRANJE GOSTA (PUT) - STATUS, STO I ISHRANA
-// =========================================================================
+// ruta za azuriranje gosta, tj za sto i meni
 app.put('/api/guests/:id/update', verifyToken, async (req, res) => {
     const guestId = req.params.id;
     const { rsvpStatus, tableNumber, dietaryRequirement } = req.body;
@@ -421,16 +396,16 @@ app.put('/api/guests/:id/update', verifyToken, async (req, res) => {
     try {
         const brojStola = (tableNumber && rsvpStatus === 'Potvrdio') ? parseInt(tableNumber, 10) : null;
 
-        // 1. Ažuriramo osnovne podatke o gostu
+        // azuriranje osnovnih podataka
         await db.promise().query(
             'UPDATE Guests SET RSVPStatus = ?, TableNumber = ? WHERE Id = ?', 
             [rsvpStatus, brojStola, guestId]
         );
 
-        // 2. Brišemo staru ishranu za ovog gosta (čistimo bazu)
+        // brisemo staru ishranu
         await db.promise().query('DELETE FROM DietaryRequirements WHERE GuestID = ?', [guestId]);
 
-        // 3. Ako je potvrdio i ima posebnu ishranu, upisujemo je ponovo
+        // ako je potvrdio i ima posebnu ishranu upisujemo je ponovo
         if (rsvpStatus === 'Potvrdio' && dietaryRequirement && dietaryRequirement !== 'Nema') {
             await db.promise().query(
                 'INSERT INTO DietaryRequirements (GuestID, RequirementType) VALUES (?, ?)',
@@ -458,26 +433,24 @@ app.put('/api/expenses/:id/paid', verifyToken, async (req, res) => {
         res.status(500).json({ greska: 'Greška na serveru pri ažuriranju plaćanja.' });
     }
 });
-// =========================================================================
-// RUTA ZA BRISANJE DOGAĐAJA (I SVIH NJEGOVIH PODATAKA)
-// =========================================================================
+// ruta za brisanje dogadjaja i svih podataka vezanih za dogadjaj, ovo samo za korisnika
 app.delete('/api/events/:id', verifyToken, async (req, res) => {
     const eventId = req.params.id;
     const userId = req.user.id;
 
     try {
-        // 1. Provjeravamo da li ovaj događaj pripada ulogovanom korisniku
+        // da li dogadjaj pripada ulogovanom korisniku
         const [event] = await db.promise().query('SELECT * FROM Events WHERE Id = ? AND UserID = ?', [eventId, userId]);
         if (event.length === 0) {
             return res.status(403).json({ poruka: 'Nemate pravo da obrišete ovaj događaj ili on ne postoji.' });
         }
 
-        // 2. Brisanje ide strogo ovim redoslijedom zbog baze:
-        await db.promise().query('DELETE FROM Expenses WHERE EventID = ?', [eventId]); // Brišemo troškove
-        await db.promise().query('DELETE FROM Tasks WHERE EventID = ?', [eventId]); // Brišemo zadatke
-        await db.promise().query('DELETE FROM DietaryRequirements WHERE GuestID IN (SELECT Id FROM Guests WHERE EventId = ?)', [eventId]); // Brišemo ishranu
-        await db.promise().query('DELETE FROM Guests WHERE EventId = ?', [eventId]); // Brišemo goste
-        await db.promise().query('DELETE FROM Events WHERE Id = ?', [eventId]); // Na kraju brišemo događaj
+        // ovaj redosljed zbog baze
+        await db.promise().query('DELETE FROM Expenses WHERE EventID = ?', [eventId]); 
+        await db.promise().query('DELETE FROM Tasks WHERE EventID = ?', [eventId]); 
+        await db.promise().query('DELETE FROM DietaryRequirements WHERE GuestID IN (SELECT Id FROM Guests WHERE EventId = ?)', [eventId]); 
+        await db.promise().query('DELETE FROM Guests WHERE EventId = ?', [eventId]);
+        await db.promise().query('DELETE FROM Events WHERE Id = ?', [eventId]); 
 
         res.status(200).json({ poruka: 'Događaj je uspješno obrisan!' });
     } catch (error) {
@@ -529,7 +502,6 @@ app.get('/api/admin/events', verifyToken, async (req, res) => {
     }
 
     try {
-        // JOIN jer spajamo Events i Users jer nam treba korisnik koji je kreirao dogadjaj
         const query = `
             SELECT Events.Id, Events.Title, Events.Date, Events.Location, Events.TotalBudget,
                    Users.FirstName, Users.LastName, Users.Email
@@ -587,22 +559,20 @@ app.put('/api/expenses/:id/update-guests', verifyToken, async (req, res) => {
         res.status(500).json({ poruka: 'Greška na serveru.' });
     }
 });
-// =========================================================================
-// RUTA ZA BRISANJE KORISNIKA (I SVIH NJEGOVIH PODATAKA)
-// =========================================================================
+// ruta za brisanje korisnika, samo admin
 app.delete('/api/admin/users/:id', verifyToken, isAdmin, async (req, res) => {
     const userIdToDelete = req.params.id;
 
     try {
-        // 1. Provjera da li slučajno pokušavamo da obrišemo administratora
+        // ne mozemo admina da brisemo
         const [userRows] = await db.promise().query('SELECT RoleId FROM Users WHERE Id = ?', [userIdToDelete]);
         if (userRows.length === 0) return res.status(404).json({ poruka: 'Korisnik nije pronađen.' });
         if (userRows[0].RoleId === 1) return res.status(403).json({ poruka: 'Nije dozvoljeno brisanje administratora!' });
 
-        // 2. Pronalazimo sve događaje ovog korisnika
+        // brisemo sve dogadjaje
         const [userEvents] = await db.promise().query('SELECT Id FROM Events WHERE UserID = ?', [userIdToDelete]);
         
-        // 3. Pošteno čistimo sve podatke vezane za njegove događaje kako baza ne bi prijavila Foreign Key grešku
+        // cistimo sve podatke vezane za dogadjaje
         for (let i = 0; i < userEvents.length; i++) {
             const evId = userEvents[i].Id;
             await db.promise().query('DELETE FROM Expenses WHERE EventID = ?', [evId]);
@@ -612,7 +582,7 @@ app.delete('/api/admin/users/:id', verifyToken, isAdmin, async (req, res) => {
             await db.promise().query('DELETE FROM Events WHERE Id = ?', [evId]);
         }
 
-        // 4. Na kraju, kada su svi "repovi" počišćeni, brišemo korisnika
+        //na kraju korisnika
         await db.promise().query('DELETE FROM Users WHERE Id = ?', [userIdToDelete]);
 
         res.status(200).json({ poruka: 'Korisnik i svi njegovi podaci su uspješno obrisani!' });
@@ -623,19 +593,13 @@ app.delete('/api/admin/users/:id', verifyToken, isAdmin, async (req, res) => {
 });
 
 // ruta za brisanje vendora iz baze podataka
-app.delete('/api/admin/vendors/:id', verifyToken, (req, res) => {
-    // ručna provera role 
-    const userRole = req.user.roleId || req.user.RoleId;
-    if (Number(userRole) !== 1) {
-        return res.status(403).json({ poruka: 'Pristup odbijen. Niste administrator.' });
-    }
-
+app.delete('/api/admin/vendors/:id', verifyToken, isAdmin, (req, res) => {
     const { id } = req.params;
 
     db.query('DELETE FROM Vendors WHERE Id = ? OR ID = ?', [id, id], (err, result) => {
         if (err) {
             console.error('Greška pri brisanju vendora:', err);
-            return res.status(500).json({ greska: 'Greška pri brisanju vendora iz baze podataka.' });
+            return res.status(500).json({ greska: 'Greška pri brisanju vendora iz baze.' });
         }
         res.status(200).json({ poruka: 'Vendor je uspješno obrisan!' });
     });

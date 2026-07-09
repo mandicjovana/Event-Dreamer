@@ -8,7 +8,7 @@ function MyEvents() {
   const [error, setError] = useState('');
 
   const [selectedEvent, setSelectedEvent] = useState(null); 
-  // Stanje koje čuva radnu kopiju događaja dok je modal otvoren (Draft)
+  // stanje koje čuva radnu kopiju događaja dok je modal otvoren
   const [draftEvent, setDraftEvent] = useState(null);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -49,7 +49,7 @@ function MyEvents() {
       const responseTypes = await axios.get('http://localhost:5000/api/event-types');
       setEventTypes(responseTypes.data);
 
-      // Ako je modal otvoren nakon snimanja, osvježavamo original
+      // ako je modal otvoren nakon snimanja, osvježavamo original
       if (selectedEvent) {
         const trenutniEvent = responseEvents.data.find(e => e.Id === selectedEvent.Id);
         if (trenutniEvent) setSelectedEvent(trenutniEvent);
@@ -68,7 +68,7 @@ function MyEvents() {
   }, [navigate]);
 
   const handleCreateEvent = async (e) => {
-    e.preventDefault();
+    e.preventDefault();//zaustavlja refresovanje i preuyima kontrolu nad podacima 
     const token = localStorage.getItem('token');
     try {
       await axios.post('http://localhost:5000/api/events', newEvent, {
@@ -83,7 +83,7 @@ function MyEvents() {
     }
   };
   const handleDeleteEvent = async (eventId, e) => {
-    e.stopPropagation(); // Sprečava da se otvori modal kada kliknemo na dugme
+    e.stopPropagation(); // sprečava da se otvori modal kada kliknemo na dugme
     const isConfirmed = window.confirm("Da li ste sigurni da želite trajno da obrišete ovaj događaj? Svi gosti, zadaci i troškovi će biti izbrisani!");
     
     if (!isConfirmed) return;
@@ -94,16 +94,14 @@ function MyEvents() {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Događaj je uspješno obrisan!');
-      fetchAllData(); // Osvježavamo prikaz da kartica nestane
+      fetchAllData(); // osvježavamo prikaz da kartica nestane
     } catch (err) {
       console.error(err);
       alert('Došlo je do greške pri brisanju događaja.');
     }
   };
 
-  // =========================================================================
-  // LOKALNE FUNKCIJE ZA MODAL (MIJENJAJU SAMO DRAFT VERZIJU)
-  // =========================================================================
+  // lokalne funkcije za modal
 
   const handleToggleTaskLocal = (taskId) => {
     setDraftEvent(prev => ({
@@ -185,14 +183,12 @@ function MyEvents() {
     setInputGuestLast('');
   };
 
-  // =========================================================================
-  // MEGA FUNKCIJA: ČUVANJE SVIH PROMJENA ODJEDNOM NA SERVER
-  // =========================================================================
+  // cuvanje svih promjena odjednom na server
   const handleSaveChanges = async () => {
     const token = localStorage.getItem('token');
     const promises = [];
 
-    // 1. Čuvamo zadatke
+    // cuvamo zadatke
     draftEvent.tasks?.forEach(draftTask => {
       if (draftTask.isNew) {
         promises.push(axios.post('http://localhost:5000/api/tasks', { eventId: draftEvent.Id, taskName: draftTask.TaskName }, { headers: { Authorization: `Bearer ${token}` } }));
@@ -204,7 +200,7 @@ function MyEvents() {
       }
     });
 
-    // 2. Čuvamo goste
+    // cuvamo goste
     draftEvent.guests?.forEach(draftGuest => {
       if (draftGuest.isNew) {
         promises.push(axios.post('http://localhost:5000/api/guests', { 
@@ -227,7 +223,7 @@ function MyEvents() {
       }
     });
 
-    // 3. Čuvamo troškove/vendore
+    // cuvamo troškove/vendore
     draftEvent.expenses?.forEach(draftExp => {
       const origExp = selectedEvent.expenses.find(e => e.Id === draftExp.Id);
       if (origExp) {
@@ -307,12 +303,12 @@ function MyEvents() {
               <div key={event.Id} className="event-glass-card">
                <div className="event-header" style={{ position: 'relative' }}>
                   
-                  {/* NOVO: Dugme za brisanje pozicionirano u gornji desni ugao kartice */}
+                  {/*dugme za brisanje dogadjaja */}
                   <button 
                     onClick={(e) => handleDeleteEvent(event.Id, e)}
-                    style={{ position: 'absolute', top: '0', right: '0', background: 'rgba(197, 34, 31, 0.1)', color: '#c5221f', border: '1px solid rgba(197, 34, 31, 0.3)', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.3s ease' }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = '#c5221f'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(197, 34, 31, 0.1)'; e.currentTarget.style.color = '#c5221f'; }}
+                    style={{ position: 'absolute', top: '0', right: '0', background: 'rgba(197, 34, 31, 0.1)', color: '#F6DEEA', border: '1px solid rgba(197, 34, 31, 0.3)', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.3s ease' }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#BCC5AA'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(197, 34, 31, 0.1)'; e.currentTarget.style.color = '#F6DEEA'; }}
                     title="Obriši događaj trajno"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -369,7 +365,7 @@ function MyEvents() {
                   </div>
                 </div>
                 
-                {/* Otvaranje modala sada pravi duboku kopiju događaja i pamti UI stanje za goste! */}
+                {/* otvaranje modala sada pravi duboku kopiju događaja i pamti UI stanje za goste */}
                 <button className="details-btn" onClick={() => { 
                   setSelectedEvent(event); 
                   const draftCopy = JSON.parse(JSON.stringify(event)); 

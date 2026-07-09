@@ -57,11 +57,9 @@ function Admin() {
     fetchAllAdminData();
   }, [navigate]);
 
-  // =========================================================================
-  // NOVO: Funkcija za brisanje korisnika (sa svim njegovim događajima)
-  // =========================================================================
+  // za brisanje korisnika
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Da li ste sigurni da želite obrisati ovog korisnika? Oprez: Svi njegovi događaji, gosti i troškovi će takođe biti trajno izbrisani!')) return;
+    if (!window.confirm('Da li ste sigurni da želite obrisati ovog korisnika? Svi njegovi događaji, gosti i troškovi će takođe biti trajno izbrisani!')) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -73,7 +71,6 @@ function Admin() {
       setUsersList(usersList.filter(user => user.Id !== userId));
       setStats(prev => ({ ...prev, ukupnoKorisnika: prev.ukupnoKorisnika - 1 }));
       
-      // Osvježavamo događaje jer su obrisani i korisnikovi događaji
       fetchAllAdminData(); 
     } catch (error) {
       console.error('Greška pri brisanju korisnika:', error);

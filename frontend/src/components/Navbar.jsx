@@ -57,7 +57,7 @@ function Navbar() {
                 style={location.pathname === '/admin' ? { color: '#111', fontWeight: '800' } : {}}
                 onClick={closeMenu}
               >
-                📊 Kontrolna Tabla
+                 Kontrolna Tabla
               </Link>
             </>
           ) : (
